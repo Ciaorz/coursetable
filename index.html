@@ -554,6 +554,9 @@
         .week-grid .grid-body .day-column:last-child {
             border-right: none;
         }
+        .week-grid .grid-body .day-column.today {
+            background: #f8faff;
+        }
         .week-grid .grid-body .day-column .day-grid-line {
             position: absolute;
             left: 0;
@@ -2082,8 +2085,8 @@
                 });
             });
 
-            // 初次显示时间线
-            updateCurrentTimeLines();
+            // 延迟一小段时间以确保DOM渲染完成，然后显示时间线
+            setTimeout(updateCurrentTimeLines, 50);
         }
 
         function renderSingleWeekGrid(weekStart, label, showNav) {
@@ -2125,6 +2128,7 @@
             for (let i = 0; i < 7; i++) {
                 const dateObj = dayDates[i];
                 const dateStr = formatDate(dateObj);
+                const isTodayCol = dateStr === todayStr;
                 const dayCourses = getCoursesForDate(dateStr);
 
                 let gridLines = '';
@@ -2157,7 +2161,7 @@
                                 </div>`;
                 }
 
-                dayColumns += `<div class="day-column">
+                dayColumns += `<div class="day-column${isTodayCol ? ' today' : ''}">
                                     ${gridLines}
                                     ${courseBlocks}
                                 </div>`;
