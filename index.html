@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>课程表</title>
+
+    <!-- PWA 基础设置 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="课程表" />
+    <meta name="theme-color" content="#4f7df3" />
+    <link rel="manifest" id="manifestLink" />
+
+    <style>
+        /* ===== 全局 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f4f6fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        #app {
+            max-width: 1500px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+
+        /* ===== 导航栏 ===== */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: white;
+            border-bottom: 1px solid #eef1f5;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .navbar-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a2332;
+        }
+        .navbar-title span {
+            color: #4f7df3;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .view-toggle button {
+            border: none;
+            background: transparent;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #5a6879;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .view-toggle button.active {
+            background: white;
+            color: #1a2332;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .view-toggle button:hover:not(.active) {
+            color: #1a2332;
+        }
+        .sub-toggle {
+            display: flex;
+            gap: 4px;
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 3px;
+            margin-left: 4px;
+        }
+        .sub-toggle button {
+            border: none;
+            background: transparent;
+            padding: 4px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #5a6879;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .sub-toggle button.active {
+            background: white;
+            color: #1a2332;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        .navbar-stats {
+            font-size: 15px;
+            font-weight: 500;
+            color: #2c3e50;
+            background: #f0f4fe;
+            padding: 6px 18px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .navbar-stats .num {
+            color: #4f7df3;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .nav-date-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            background: #f8f9fc;
+            padding: 4px 16px;
+            border-radius: 16px;
+            white-space: nowrap;
+        }
+        .btn-add-nav {
+            background: #4f7df3;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-add-nav:hover {
+            background: #3a66d9;
+            transform: scale(1.02);
+        }
+        .btn-back-today {
+            background: #e8edf8;
+            color: #1a2332;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-back-today:hover {
+            background: #d0ddf5;
+        }
+
+        /* ===== 主内容 ===== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        .calendar-wrap {
+            flex: 1;
+            overflow: auto;
+            padding: 16px 20px 20px 20px;
+            background: #ffffff;
+        }
+        .calendar-wrap::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .calendar-wrap::-webkit-scrollbar-thumb {
+            background: #d0d7e2;
+            border-radius: 8px;
+        }
+
+        /* ===== 缩放按钮 ===== */
+        .zoom-controls {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            z-index: 50;
+            display: none;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(4px);
+            padding: 4px 8px;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .zoom-controls.visible {
+            display: flex;
+        }
+        .zoom-controls button {
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            font-weight: 300;
+            color: #2c3e50;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+        }
+        .zoom-controls button:hover {
+            background: rgba(79, 125, 243, 0.12);
+            opacity: 1;
+        }
+        .zoom-controls .zoom-level {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4f7df3;
+            min-width: 40px;
+            text-align: center;
+            line-height: 32px;
+        }
+
+        /* ===== 月视图 ===== */
+        .month-grid-wrap {
+            display: flex;
+            gap: 28px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .month-grid-wrap.single {
+            gap: 0;
+            justify-content: center;
+            margin-top: 60px;
+        }
+        .month-grid-wrap.single .month-card {
+            max-width: 800px;
+            width: 100%;
+            transition: transform 0.2s ease;
+            transform-origin: top center;
+        }
+        .month-card {
+            flex: 1;
+            min-width: 260px;
+            max-width: 420px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #eef1f5;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+        .month-card-header {
+            padding: 10px 16px 6px 16px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+            color: #1a2332;
+        }
+        .month-weekday-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            padding: 0 8px;
+            gap: 2px;
+        }
+        .month-weekday-row div {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8a9aa8;
+            padding: 4px 0 2px 0;
+        }
+        .month-days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            padding: 0 8px 8px 8px;
+        }
+        .month-day-cell {
+            aspect-ratio: 1 / 1;
+            min-height: 70px;
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 3px 4px;
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .month-day-cell:hover {
+            background: #f0f4fe;
+            border-color: #d0ddf5;
+        }
+        .month-day-cell.other-month {
+            color: #b0bcc8;
+            background: #f8f9fb;
+        }
+        .month-day-cell.other-month .day-number {
+            color: #b0bcc8;
+        }
+        .month-day-cell .day-number {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a2332;
+            line-height: 1.2;
+            margin-bottom: 2px;
+            flex-shrink: 0;
+        }
+        .month-day-cell.today {
+            border-color: #4f7df3;
+            background: #f5f8ff;
+        }
+        .month-day-cell.today .day-number {
+            color: #4f7df3;
+        }
+        .month-day-cell .course-slots {
+            flex: 1;
+            position: relative;
+            min-height: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            margin-top: 2px;
+        }
+        .month-day-cell .course-slot {
+            border-radius: 3px;
+            font-size: 8px;
+            line-height: 1.2;
+            padding: 1px 3px;
+            color: #1a2332;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: 0.1s;
+            border-left: 2px solid #4f7df3;
+            background: rgba(79, 125, 243, 0.10);
+            flex-shrink: 0;
+        }
+        .month-day-cell .course-slot:hover {
+            opacity: 0.8;
+        }
+        .month-day-cell .more-indicator {
+            font-size: 8px;
+            color: #8a9aa8;
+            margin-top: 1px;
+        }
+
+        /* ===== 周视图 ===== */
+        .week-dual-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .week-single-wrap {
+            position: relative;
+            border: 1px solid #eef1f5;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fafbfc;
+        }
+        .week-single-wrap .week-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: white;
+            border-bottom: 1px solid #eef1f5;
+            font-weight: 600;
+            font-size: 15px;
+            color: #1a2332;
+        }
+        .week-single-wrap .week-header .week-nav {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .week-single-wrap .week-header .week-nav button {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #8a9aa8;
+            padding: 0 8px;
+            transition: 0.2s;
+            opacity: 0.6;
+        }
+        .week-single-wrap .week-header .week-nav button:hover {
+            color: #1a2332;
+            opacity: 1;
+        }
+        .week-nav-float {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(2px);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #2c3e50;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: 0.2s;
+            border: none;
+            user-select: none;
+            position: static !important;
+            transform: none !important;
+        }
+        .week-nav-float:hover {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+        }
+
+        .week-grid-container {
+            padding: 0 4px 4px 4px;
+            overflow-x: auto;
+        }
+        .week-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            grid-template-rows: auto 1fr;
+            min-width: 700px;
+            border: 1px solid #eef1f5;
+            border-radius: 8px;
+            background: white;
+            overflow: hidden;
+        }
+        .week-grid .grid-header {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            background: #fafbfc;
+            border-bottom: 1px solid #eef1f5;
+        }
+        .week-grid .grid-header .header-cell {
+            padding: 8px 4px 6px 4px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+            border-right: 1px solid #eef1f5;
+        }
+        .week-grid .grid-header .header-cell:last-child {
+            border-right: none;
+        }
+        .week-grid .grid-header .header-cell.today {
+            background: #eef4fe;
+            color: #4f7df3;
+        }
+        .week-grid .grid-header .header-cell .week-date-sub {
+            font-weight: 400;
+            font-size: 12px;
+            color: #8a9aa8;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .week-grid .grid-body {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            position: relative;
+            height: 680px;
+        }
+        .week-grid .grid-body .time-column {
+            position: relative;
+            background: #fafbfc;
+            border-right: 1px solid #eef1f5;
+            height: 100%;
+        }
+        .week-grid .grid-body .time-column .time-marker {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #eef1f5;
+            pointer-events: none;
+        }
+        .week-grid .grid-body .time-column .time-marker span {
+            position: absolute;
+            left: 4px;
+            top: -8px;
+            font-size: 9px;
+            color: #b0bcc8;
+            background: #fafbfc;
+            padding: 0 4px;
+            white-space: nowrap;
+        }
+        .week-grid .grid-body .day-column {
+            position: relative;
+            background: white;
+            border-right: 1px solid #eef1f5;
+            height: 100%;
+            overflow: hidden;
+        }
+        .week-grid .grid-body .day-column:last-child {
+            border-right: none;
+        }
+        .week-grid .grid-body .day-column .day-grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #eef1f5;
+            pointer-events: none;
+        }
+        .week-grid .grid-body .day-column .course-block {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #1a2332;
+            cursor: pointer;
+            overflow: hidden;
+            transition: 0.15s;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.3;
+            border-left: 3px solid #4f7df3;
+            background: rgba(79, 125, 243, 0.10);
+        }
+        .week-grid .grid-body .day-column .course-block:hover {
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(79, 125, 243, 0.2);
+            filter: brightness(0.96);
+        }
+        .week-grid .grid-body .day-column .course-block .course-name {
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .week-grid .grid-body .day-column .course-block .course-student {
+            font-size: 10px;
+            color: #5a6879;
+        }
+        .week-grid .grid-body .day-column .course-block .course-time {
+            font-size: 9px;
+            color: #7a8a9a;
+        }
+        .week-grid .grid-body .day-column .course-block .course-classroom {
+            font-size: 8px;
+            color: #8a9aa8;
+            margin-top: 1px;
+        }
+
+        /* ===== 模态框 ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 20px;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 24px;
+            max-width: 640px;
+            width: 100%;
+            padding: 28px 32px 24px 32px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.25s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .modal-box h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a2332;
+            margin-bottom: 4px;
+        }
+        .modal-box .sub-hint {
+            font-size: 14px;
+            color: #8a9aa8;
+            margin-bottom: 16px;
+        }
+        .modal-box label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 12px 0 4px 0;
+        }
+        .modal-box input,
+        .modal-box select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: 0.2s;
+            background: #fafbfc;
+            outline: none;
+        }
+        .modal-box input:focus,
+        .modal-box select:focus {
+            border-color: #4f7df3;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(79, 125, 243, 0.08);
+        }
+        .modal-box .row2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .modal-box .row2 label {
+            margin-top: 8px;
+        }
+        .modal-box .remaining-info {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #f0f4fe;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #1a2332;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-box .remaining-info .label {
+            font-weight: 600;
+        }
+        .modal-box .remaining-info .value {
+            font-weight: 700;
+            color: #4f7df3;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .modal-actions button {
+            padding: 10px 28px;
+            border-radius: 14px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-actions .btn-cancel {
+            background: #f0f2f5;
+            color: #5a6879;
+        }
+        .modal-actions .btn-cancel:hover {
+            background: #e2e6ec;
+        }
+        .modal-actions .btn-confirm {
+            background: #4f7df3;
+            color: white;
+        }
+        .modal-actions .btn-confirm:hover {
+            background: #3a66d9;
+        }
+        .modal-actions .btn-secondary {
+            background: #e8edf8;
+            color: #2c3e50;
+        }
+        .modal-actions .btn-secondary:hover {
+            background: #d0ddf5;
+        }
+
+        .batch-area {
+            margin-top: 16px;
+            border-top: 1px solid #eef1f5;
+            padding-top: 16px;
+        }
+        .batch-area .batch-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .batch-area .batch-row input {
+            flex: 1;
+            min-width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fafbfc;
+        }
+        .batch-area .batch-row .btn-remove-row {
+            background: #fde8e8;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: #d9534f;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .batch-area .batch-row .btn-remove-row:hover {
+            background: #fcd0d0;
+        }
+        .batch-area .btn-add-batch {
+            background: #e8edf8;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .batch-area .btn-add-batch:hover {
+            background: #d0ddf5;
+        }
+
+        /* 自定义下拉 */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        .custom-dropdown .dropdown-list {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        .custom-dropdown .dropdown-list.active {
+            display: block;
+        }
+        .custom-dropdown .dropdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            font-size: 14px;
+            color: #1a2332;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f2f5;
+            transition: 0.1s;
+        }
+        .custom-dropdown .dropdown-item:hover {
+            background: #f0f4fe;
+        }
+        .custom-dropdown .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .custom-dropdown .dropdown-item .item-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .custom-dropdown .dropdown-item .item-delete {
+            background: transparent;
+            border: none;
+            color: #b0bcc8;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: 0.2s;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .custom-dropdown .dropdown-item .item-delete:hover {
+            color: #e06070;
+            transform: scale(1.2);
+        }
+        .custom-dropdown .dropdown-empty {
+            padding: 12px 14px;
+            color: #b0bcc8;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        /* 详情弹窗 */
+        .detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 998;
+            padding: 20px;
+        }
+        .detail-overlay.show {
+            display: flex;
+        }
+        .detail-box {
+            background: white;
+            border-radius: 20px;
+            max-width: 420px;
+            width: 100%;
+            padding: 28px 32px 24px 32px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+            animation: modalIn 0.2s ease;
+        }
+        .detail-box h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a2332;
+            margin-bottom: 12px;
+        }
+        .detail-box .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 14px;
+        }
+        .detail-box .detail-item .label {
+            color: #8a9aa8;
+        }
+        .detail-box .detail-item .value {
+            font-weight: 500;
+            color: #1a2332;
+        }
+        .detail-box .detail-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        .detail-box .detail-actions button {
+            padding: 8px 20px;
+            border-radius: 12px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .detail-box .detail-actions .btn-edit {
+            background: #e8edf8;
+            color: #2c3e50;
+        }
+        .detail-box .detail-actions .btn-edit:hover {
+            background: #d0ddf5;
+        }
+        .detail-box .detail-actions .btn-del {
+            background: #fde8e8;
+            color: #d9534f;
+        }
+        .detail-box .detail-actions .btn-del:hover {
+            background: #fcd0d0;
+        }
+        .detail-box .detail-actions .btn-close {
+            background: #f0f2f5;
+            color: #5a6879;
+        }
+        .detail-box .detail-actions .btn-close:hover {
+            background: #e2e6ec;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1024px) {
+            .month-grid-wrap {
+                flex-wrap: wrap;
+            }
+            .month-card {
+                max-width: 100%;
+                min-width: 220px;
+            }
+            .navbar {
+                padding: 10px 16px;
+            }
+            .navbar-title {
+                font-size: 17px;
+            }
+            .btn-add-nav {
+                padding: 6px 14px;
+                font-size: 13px;
+            }
+            .calendar-wrap {
+                padding: 12px 12px 16px 12px;
+            }
+            .modal-box {
+                max-width: 95%;
+                padding: 20px;
+            }
+            .batch-area .batch-row {
+                flex-wrap: wrap;
+            }
+            .batch-area .batch-row input {
+                min-width: 60px;
+                flex: 1 0 80px;
+            }
+            .zoom-controls {
+                top: 12px;
+                right: 12px;
+            }
+        }
+        @media (max-width: 700px) {
+            #app {
+                height: auto;
+                min-height: 100vh;
+                border-radius: 16px;
+            }
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+            }
+            .navbar-left {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .navbar-right {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .navbar-stats {
+                font-size: 13px;
+                padding: 4px 14px;
+            }
+            .modal-box {
+                padding: 16px;
+            }
+            .month-day-cell {
+                min-height: 54px;
+                padding: 2px 3px;
+            }
+            .month-day-cell .day-number {
+                font-size: 12px;
+            }
+            .month-day-cell .course-slot {
+                font-size: 7px;
+                padding: 0 2px;
+            }
+            .week-grid {
+                min-width: 500px;
+            }
+            .week-grid .grid-body {
+                height: 480px;
+            }
+            .week-grid .grid-body .day-column .course-block {
+                font-size: 9px;
+                padding: 1px 4px;
+            }
+            .week-grid .grid-body .day-column .course-block .course-name {
+                font-size: 10px;
+            }
+            .zoom-controls {
+                top: 8px;
+                right: 8px;
+                padding: 2px 6px;
+            }
+            .zoom-controls button {
+                font-size: 18px;
+                width: 26px;
+                height: 26px;
+            }
+            .zoom-controls .zoom-level {
+                font-size: 12px;
+                min-width: 30px;
+                line-height: 26px;
+            }
+            .month-grid-wrap.single {
+                margin-top: 50px;
+            }
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <div class="navbar-title">📚 <span>课程表</span></div>
+                <div class="view-toggle" id="viewToggle">
+                    <button data-view="month" class="active">月视图</button>
+                    <button data-view="week">周视图</button>
+                </div>
+                <div class="sub-toggle" id="subToggle">
+                    <button data-sub="single" class="active">单月</button>
+                    <button data-sub="three">三月</button>
+                </div>
+            </div>
+            <div class="navbar-right">
+                <button class="btn-back-today" id="btnBackToday">📅 回到本周</button>
+                <div class="navbar-stats" id="statsDisplay">
+                    📊 总课时 <span class="num" id="totalHoursCount">0</span>
+                </div>
+                <div class="nav-date-label" id="dateLabel">2026年8月</div>
+                <button class="btn-add-nav" id="btnAddNav">＋ 添加课程</button>
+            </div>
+        </nav>
+
+        <!-- 主内容 -->
+        <div class="main-content">
+            <div class="zoom-controls" id="zoomControls">
+                <button id="zoomOut" title="缩小10%">−</button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button id="zoomIn" title="放大10%">+</button>
+            </div>
+            <div class="calendar-wrap" id="calendarWrap">
+                <!-- 动态渲染 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加 / 编辑 模态框 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <h2 id="modalTitle">添加课程</h2>
+            <div class="sub-hint" id="modalSubHint">填写课程信息，可批量添加多个时段</div>
+            <form id="courseForm" autocomplete="off">
+                <label>课程名称 *</label>
+                <div class="custom-dropdown" id="courseDropdown">
+                    <input type="text" id="fCourseName" placeholder="例如：数学" required />
+                    <div class="dropdown-list" id="courseDropdownList"></div>
+                </div>
+
+                <label>学生姓名 *</label>
+                <div class="custom-dropdown" id="studentDropdown">
+                    <input type="text" id="fStudentName" placeholder="例如：张三" required />
+                    <div class="dropdown-list" id="studentDropdownList"></div>
+                </div>
+
+                <label>教室（可选）</label>
+                <input type="text" id="fClassroom" placeholder="例如：A101" />
+
+                <label>本期总课时（小时，可选）</label>
+                <input type="number" id="fTotalHours" step="0.5" min="0" placeholder="例如：20" />
+
+                <div class="remaining-info" id="remainInfo">
+                    <span class="label">📌 扣除本课后剩余</span>
+                    <span class="value" id="fRemainDisplay">--</span>
+                </div>
+
+                <div id="singleCourseArea">
+                    <label>日期 *</label>
+                    <input type="date" id="fDate" required />
+
+                    <div class="row2">
+                        <div>
+                            <label>开始时间 *</label>
+                            <input type="time" id="fStartTime" step="60" required />
+                        </div>
+                        <div>
+                            <label>结束时间 *</label>
+                            <input type="time" id="fEndTime" step="60" required />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="batch-area" id="batchArea">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-weight:600; font-size:14px; color:#2c3e50;">📋 批量添加时段</span>
+                        <button type="button" class="btn-add-batch" id="btnAddBatchRow">＋ 添加一行</button>
+                    </div>
+                    <div id="batchRows"></div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="btnToggleBatch">📋 批量模式</button>
+                    <button type="button" class="btn-cancel" id="modalCancel">取消</button>
+                    <button type="submit" class="btn-confirm" id="modalConfirm">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 课程详情弹窗 -->
+    <div class="detail-overlay" id="detailOverlay">
+        <div class="detail-box">
+            <h3>📖 课程详情</h3>
+            <div id="detailContent">
+                <div class="detail-item"><span class="label">课程</span><span class="value" id="dCourseName">-</span></div>
+                <div class="detail-item"><span class="label">学生</span><span class="value" id="dStudentName">-</span></div>
+                <div class="detail-item"><span class="label">教室</span><span class="value" id="dClassroom">-</span></div>
+                <div class="detail-item"><span class="label">日期</span><span class="value" id="dDate">-</span></div>
+                <div class="detail-item"><span class="label">时间</span><span class="value" id="dTime">-</span></div>
+                <div class="detail-item"><span class="label">剩余课时</span><span class="value" id="dRemain">-</span></div>
+            </div>
+            <div class="detail-actions">
+                <button class="btn-close" id="detailClose">关闭</button>
+                <button class="btn-edit" id="detailEdit">✎ 编辑</button>
+                <button class="btn-del" id="detailDelete">🗑 删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  数据 & 状态
+        // ============================================================
+        let courses = [];
+        let nextId = 1;
+        let students = {};
+
+        const state = {
+            viewMode: 'month',
+            subMode: 'single',
+            currentDate: new Date(),
+            selectedCourseId: null,
+            editingId: null,
+            batchMode: false,
+            scaleFactor: 1.0,
+        };
+
+        // ============================================================
+        //  localStorage 数据持久化
+        // ============================================================
+        const STORAGE_KEY = 'courseTableData';
+
+        function saveData() {
+            try {
+                const data = {
+                    courses: courses,
+                    students: students,
+                    nextId: nextId,
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('保存数据失败:', e);
+            }
+        }
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                courses = data.courses || [];
+                students = data.students || {};
+                nextId = data.nextId || 1;
+                return true;
+            } catch (e) {
+                console.warn('读取数据失败:', e);
+                return false;
+            }
+        }
+
+        // 在每次数据变更后自动保存
+        function autoSave() {
+            saveData();
+        }
+
+        // ============================================================
+        //  工具函数
+        // ============================================================
+        const $ = (s) => document.querySelector(s);
+        const $$ = (s) => document.querySelectorAll(s);
+
+        const elWrap = $('#calendarWrap');
+        const elStats = $('#totalHoursCount');
+        const elDateLabel = $('#dateLabel');
+        const elViewToggle = $('#viewToggle');
+        const elSubToggle = $('#subToggle');
+        const elBtnAdd = $('#btnAddNav');
+        const elBtnBackToday = $('#btnBackToday');
+
+        const zoomControls = $('#zoomControls');
+        const zoomLevel = $('#zoomLevel');
+        const zoomIn = $('#zoomIn');
+        const zoomOut = $('#zoomOut');
+
+        const elModal = $('#modalOverlay');
+        const elModalTitle = $('#modalTitle');
+        const elModalSub = $('#modalSubHint');
+        const elForm = $('#courseForm');
+        const fCourseName = $('#fCourseName');
+        const fStudentName = $('#fStudentName');
+        const fClassroom = $('#fClassroom');
+        const fDate = $('#fDate');
+        const fStartTime = $('#fStartTime');
+        const fEndTime = $('#fEndTime');
+        const fTotalHours = $('#fTotalHours');
+        const fRemainDisplay = $('#fRemainDisplay');
+        const elModalCancel = $('#modalCancel');
+        const elModalConfirm = $('#modalConfirm');
+        const elSingleArea = $('#singleCourseArea');
+        const elBatchArea = $('#batchArea');
+        const elBatchRows = $('#batchRows');
+        const elBtnToggleBatch = $('#btnToggleBatch');
+        const elBtnAddBatchRow = $('#btnAddBatchRow');
+
+        const courseDropdown = $('#courseDropdown');
+        const studentDropdown = $('#studentDropdown');
+        const courseDropdownList = $('#courseDropdownList');
+        const studentDropdownList = $('#studentDropdownList');
+
+        const elDetail = $('#detailOverlay');
+        const dCourseName = $('#dCourseName');
+        const dStudentName = $('#dStudentName');
+        const dClassroom = $('#dClassroom');
+        const dDate = $('#dDate');
+        const dTime = $('#dTime');
+        const dRemain = $('#dRemain');
+        const elDetailClose = $('#detailClose');
+        const elDetailEdit = $('#detailEdit');
+        const elDetailDelete = $('#detailDelete');
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+
+        function formatDate(d) {
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        }
+
+        function parseDate(str) {
+            const p = str.split('-').map(Number);
+            return new Date(p[0], p[1] - 1, p[2]);
+        }
+
+        function formatDateDisplay(d) {
+            return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+        }
+
+        function toMinutes(h, m) { return h * 60 + m; }
+
+        function getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = (day === 0 ? 6 : day - 1);
+            d.setDate(d.getDate() - diff);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        function getWeekEnd(date) {
+            const d = getWeekStart(date);
+            d.setDate(d.getDate() + 6);
+            return d;
+        }
+
+        function getMonthDays(year, month) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+
+        function getFirstDayOfMonth(year, month) {
+            return new Date(year, month, 1).getDay();
+        }
+
+        function getCoursesForDate(dateStr) {
+            return courses.filter(c => c.date === dateStr);
+        }
+
+        function getCoursesForWeek(date) {
+            const start = getWeekStart(date);
+            const end = getWeekEnd(date);
+            const result = [];
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const ds = formatDate(d);
+                const cs = getCoursesForDate(ds);
+                for (const c of cs) result.push({ ...c, _displayDate: new Date(d) });
+            }
+            return result;
+        }
+
+        function getStudentUsedHours(studentName, excludeId = null) {
+            let total = 0;
+            for (const c of courses) {
+                if (c.studentName !== studentName) continue;
+                if (excludeId !== null && c.id === excludeId) continue;
+                const [sh, sm] = c.startTime.split(':').map(Number);
+                const [eh, em] = c.endTime.split(':').map(Number);
+                total += (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
+            }
+            return total;
+        }
+
+        function getStudentRemainHours(studentName, excludeId = null) {
+            const total = students[studentName] ? students[studentName].totalHours : 0;
+            if (total === 0) return null;
+            const used = getStudentUsedHours(studentName, excludeId);
+            return Math.max(0, total - used);
+        }
+
+        function getStudentColor(name) {
+            if (!name) return '#e8edf8';
+            const colors = [
+                '#e8edf8', '#f0e8f8', '#f8e8ed', '#e8f8ed', '#f8f0e8',
+                '#e8f0f8', '#f8e8f0', '#e8f8f0', '#f0f8e8', '#f8e8e8',
+                '#d4e0f0', '#f0d4e8', '#e8f0d4', '#f0e8d4', '#d4f0e8'
+            ];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        function getBorderColor(name) {
+            const colors = ['#4f7df3', '#8b6ce0', '#e06070', '#3aa86a', '#d4a040', '#4080d0', '#c060b0', '#40b0a0'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        function getTotalHoursForDateRange(startDate, endDate) {
+            let total = 0;
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const ds = formatDate(d);
+                const cs = getCoursesForDate(ds);
+                for (const c of cs) {
+                    const [sh, sm] = c.startTime.split(':').map(Number);
+                    const [eh, em] = c.endTime.split(':').map(Number);
+                    total += (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
+                }
+            }
+            return total;
+        }
+
+        function getUniqueCourseNames() {
+            return [...new Set(courses.map(c => c.courseName))];
+        }
+
+        function getUniqueStudentNames() {
+            return [...new Set(courses.map(c => c.studentName))];
+        }
+
+        // ============================================================
+        //  自定义下拉
+        // ============================================================
+        function buildDropdownList(inputEl, listEl, dataArray, type) {
+            const val = inputEl.value.trim().toLowerCase();
+            let filtered = dataArray;
+            if (val) {
+                filtered = dataArray.filter(item => item.toLowerCase().includes(val));
+            }
+            listEl.innerHTML = '';
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div class="dropdown-empty">暂无匹配项</div>`;
+            } else {
+                for (const item of filtered) {
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item';
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'item-text';
+                    textSpan.textContent = item;
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'item-delete';
+                    delBtn.textContent = '×';
+                    delBtn.title = '删除此名称及其所有课程';
+                    delBtn.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (confirm(`确定要删除所有 "${item}" 的课程记录吗？此操作不可撤销。`)) {
+                            if (type === 'course') {
+                                courses = courses.filter(c => c.courseName !== item);
+                            } else {
+                                courses = courses.filter(c => c.studentName !== item);
+                                delete students[item];
+                            }
+                            autoSave();
+                            closeModal();
+                            render();
+                            openAddModal(fDate.value);
+                            if (type === 'course') {
+                                fCourseName.value = item;
+                            } else {
+                                fStudentName.value = item;
+                            }
+                            alert(`已删除所有 "${item}" 的课程记录。`);
+                        }
+                    });
+                    div.addEventListener('click', (e) => {
+                        if (e.target === delBtn || delBtn.contains(e.target)) return;
+                        inputEl.value = item;
+                        listEl.classList.remove('active');
+                        inputEl.dispatchEvent(new Event('input'));
+                    });
+                    div.appendChild(textSpan);
+                    div.appendChild(delBtn);
+                    listEl.appendChild(div);
+                }
+            }
+            listEl.classList.add('active');
+        }
+
+        function setupDropdown(inputEl, listEl, type) {
+            inputEl.addEventListener('input', function() {
+                const data = type === 'course' ? getUniqueCourseNames() : getUniqueStudentNames();
+                buildDropdownList(inputEl, listEl, data, type);
+            });
+            inputEl.addEventListener('focus', function() {
+                const data = type === 'course' ? getUniqueCourseNames() : getUniqueStudentNames();
+                buildDropdownList(inputEl, listEl, data, type);
+            });
+            inputEl.addEventListener('blur', function() {
+                setTimeout(() => {
+                    listEl.classList.remove('active');
+                }, 200);
+            });
+            document.addEventListener('click', function(e) {
+                if (!inputEl.contains(e.target) && !listEl.contains(e.target)) {
+                    listEl.classList.remove('active');
+                }
+            });
+            listEl.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        // ============================================================
+        //  渲染
+        // ============================================================
+        function render() {
+            if (state.viewMode === 'month') {
+                renderMonthView();
+            } else {
+                renderWeekView();
+            }
+            updateStatsAndLabel();
+
+            if (state.viewMode === 'month' && state.subMode === 'single') {
+                zoomControls.classList.add('visible');
+                zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
+                applyZoom();
+            } else {
+                zoomControls.classList.remove('visible');
+                resetZoom();
+            }
+        }
+
+        function applyZoom() {
+            const cards = document.querySelectorAll('.month-grid-wrap.single .month-card');
+            for (const card of cards) {
+                card.style.transform = `scale(${state.scaleFactor})`;
+            }
+        }
+
+        function resetZoom() {
+            const cards = document.querySelectorAll('.month-grid-wrap.single .month-card');
+            for (const card of cards) {
+                card.style.transform = '';
+            }
+        }
+
+        // ---------- 月视图 ----------
+        function renderMonthView() {
+            const year = state.currentDate.getFullYear();
+            const month = state.currentDate.getMonth();
+
+            let html = '<div class="month-grid-wrap';
+            if (state.subMode === 'single') html += ' single';
+            html += '">';
+
+            if (state.subMode === 'single') {
+                html += renderMonthCard(year, month, true);
+            } else {
+                const prevMonth = month === 0 ? 11 : month - 1;
+                const prevYear = month === 0 ? year - 1 : year;
+                const nextMonth = month === 11 ? 0 : month + 1;
+                const nextYear = month === 11 ? year + 1 : year;
+                html += renderMonthCard(prevYear, prevMonth, false);
+                html += renderMonthCard(year, month, true);
+                html += renderMonthCard(nextYear, nextMonth, false);
+            }
+            html += '</div>';
+            elWrap.innerHTML = html;
+
+            elWrap.querySelectorAll('.month-day-cell').forEach(el => {
+                const ds = el.dataset.date;
+                if (!ds) return;
+                if (!el.classList.contains('other-month')) {
+                    el.addEventListener('click', (e) => {
+                        if (e.target.closest('.course-slot')) return;
+                        openAddModal(ds);
+                    });
+                } else {
+                    el.addEventListener('click', () => {
+                        const d = parseDate(ds);
+                        state.currentDate = d;
+                        render();
+                    });
+                }
+                el.querySelectorAll('.course-slot').forEach(slot => {
+                    slot.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = parseInt(slot.dataset.courseId);
+                        if (!isNaN(id)) openDetailModal(id);
+                    });
+                });
+            });
+        }
+
+        function renderMonthCard(year, month, isCurrent) {
+            const daysInMonth = getMonthDays(year, month);
+            const firstDay = getFirstDayOfMonth(year, month);
+            const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
+            const totalSlots = 42;
+            const todayStr = formatDate(new Date());
+
+            let html = `<div class="month-card">
+                <div class="month-card-header">${year}年${month+1}月 ${isCurrent ? '⭐' : ''}</div>
+                <div class="month-weekday-row">
+                    <div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div>
+                </div>
+                <div class="month-days-grid">`;
+
+            const prevMonthDays = getMonthDays(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
+            for (let i = 0; i < totalSlots; i++) {
+                let displayDay, displayMonth, displayYear, isOther = false;
+                if (i < startOffset) {
+                    const day = prevMonthDays - startOffset + i + 1;
+                    const m = month === 0 ? 11 : month - 1;
+                    const y = month === 0 ? year - 1 : year;
+                    displayDay = day;
+                    displayMonth = m;
+                    displayYear = y;
+                    isOther = true;
+                } else if (i >= startOffset + daysInMonth) {
+                    const day = i - startOffset - daysInMonth + 1;
+                    const m = month === 11 ? 0 : month + 1;
+                    const y = month === 11 ? year + 1 : year;
+                    displayDay = day;
+                    displayMonth = m;
+                    displayYear = y;
+                    isOther = true;
+                } else {
+                    displayDay = i - startOffset + 1;
+                    displayMonth = month;
+                    displayYear = year;
+                }
+                const dateObj = new Date(displayYear, displayMonth, displayDay);
+                const dateStr = formatDate(dateObj);
+                const isToday = dateStr === todayStr;
+                const dayCourses = getCoursesForDate(dateStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                const cls = `month-day-cell${isOther ? ' other-month' : ''}${isToday ? ' today' : ''}`;
+                html += `<div class="${cls}" data-date="${dateStr}">
+                            <div class="day-number">${displayDay}</div>
+                            <div class="course-slots">`;
+
+                const dayStart = 8 * 60;
+                const dayEnd = 22 * 60;
+                const totalDayMinutes = dayEnd - dayStart;
+                const maxShow = 6;
+                const showCourses = dayCourses.slice(0, maxShow);
+                const remaining = dayCourses.length - maxShow;
+
+                for (const c of showCourses) {
+                    const [sh, sm] = c.startTime.split(':').map(Number);
+                    const [eh, em] = c.endTime.split(':').map(Number);
+                    const startMin = toMinutes(sh, sm);
+                    const endMin = toMinutes(eh, em);
+                    const clampedStart = Math.max(startMin, dayStart);
+                    const clampedEnd = Math.min(endMin, dayEnd);
+                    if (clampedEnd <= clampedStart) continue;
+                    const topPct = ((clampedStart - dayStart) / totalDayMinutes) * 100;
+                    const heightPct = ((clampedEnd - clampedStart) / totalDayMinutes) * 100;
+                    const color = getStudentColor(c.studentName);
+                    const border = getBorderColor(c.studentName);
+                    html += `<div class="course-slot" data-course-id="${c.id}" 
+                                style="background:${color};border-left-color:${border};width:100%;height:${Math.max(heightPct, 4)}%;margin-top:${topPct}%;position:relative;margin-bottom:1px;">
+                                ${c.startTime} - ${c.endTime}
+                            </div>`;
+                }
+                if (remaining > 0) {
+                    html += `<div class="more-indicator">+${remaining} 更多</div>`;
+                }
+                html += `</div></div>`;
+            }
+            html += '</div></div>';
+            return html;
+        }
+
+        // ---------- 周视图 ----------
+        function renderWeekView() {
+            const baseDate = state.currentDate;
+            const thisWeekStart = getWeekStart(baseDate);
+            const nextWeekStart = new Date(thisWeekStart);
+            nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+
+            let html = `<div class="week-dual-wrap">`;
+            html += renderSingleWeekGrid(thisWeekStart, '本周', true);
+            html += renderSingleWeekGrid(nextWeekStart, '下周', false);
+            html += `</div>`;
+            elWrap.innerHTML = html;
+
+            elWrap.querySelectorAll('.week-nav-float').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const delta = parseInt(btn.dataset.delta);
+                    if (!isNaN(delta)) {
+                        const d = new Date(state.currentDate);
+                        d.setDate(d.getDate() + delta * 7);
+                        state.currentDate = d;
+                        render();
+                    }
+                });
+            });
+            elWrap.querySelectorAll('.course-block').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = parseInt(el.dataset.courseId);
+                    if (!isNaN(id)) openDetailModal(id);
+                });
+            });
+            elWrap.querySelectorAll('.day-column').forEach(col => {
+                col.addEventListener('dblclick', (e) => {
+                    if (e.target.closest('.course-block')) return;
+                    const grid = col.closest('.week-grid');
+                    if (!grid) return;
+                    const weekStartStr = grid.dataset.weekStart;
+                    if (!weekStartStr) return;
+                    const startDate = parseDate(weekStartStr);
+                    const dayIndex = Array.from(grid.querySelectorAll('.day-column')).indexOf(col);
+                    if (dayIndex < 0) return;
+                    const targetDate = new Date(startDate);
+                    targetDate.setDate(targetDate.getDate() + dayIndex);
+                    openAddModal(formatDate(targetDate));
+                });
+            });
+        }
+
+        function renderSingleWeekGrid(weekStart, label, showNav) {
+            const start = new Date(weekStart);
+            const end = getWeekEnd(start);
+            const todayStr = formatDate(new Date());
+            const startDateStr = formatDate(start);
+            const labelStr = `${start.getFullYear()}年${start.getMonth()+1}月${start.getDate()}日 - ${end.getMonth()+1}月${end.getDate()}日`;
+
+            const gridHeight = 680;
+            const startHour = 8,
+                endHour = 22;
+            const extraTop = 30,
+                extraBottom = 30;
+            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop + extraBottom;
+
+            let headerCells = '';
+            const dayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const dayDates = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(start);
+                d.setDate(d.getDate() + i);
+                dayDates.push(d);
+                const ds = formatDate(d);
+                const isToday = ds === todayStr;
+                const labelDay = `${d.getMonth()+1}/${d.getDate()}`;
+                headerCells += `<div class="header-cell${isToday ? ' today' : ''}">
+                                    ${dayLabels[i]}<span class="week-date-sub">${labelDay}</span>
+                                </div>`;
+            }
+
+            let timeMarkers = '';
+            for (let h = startHour; h <= endHour; h++) {
+                const minutesFromTop = (h - startHour) * 60 + extraTop;
+                const pct = (minutesFromTop / totalHeightMinutes) * 100;
+                timeMarkers += `<div class="time-marker" style="top:${pct}%;"><span>${h}:00</span></div>`;
+            }
+
+            let dayColumns = '';
+            for (let i = 0; i < 7; i++) {
+                const dateObj = dayDates[i];
+                const dateStr = formatDate(dateObj);
+                const dayCourses = getCoursesForDate(dateStr);
+                const isToday = dateStr === todayStr;
+
+                let gridLines = '';
+                for (let h = startHour; h <= endHour; h++) {
+                    const minutesFromTop = (h - startHour) * 60 + extraTop;
+                    const pct = (minutesFromTop / totalHeightMinutes) * 100;
+                    gridLines += `<div class="day-grid-line" style="top:${pct}%;"></div>`;
+                }
+
+                let courseBlocks = '';
+                for (const c of dayCourses) {
+                    const [sh, sm] = c.startTime.split(':').map(Number);
+                    const [eh, em] = c.endTime.split(':').map(Number);
+                    const startMin = toMinutes(sh, sm);
+                    const endMin = toMinutes(eh, em);
+                    const clampedStart = Math.max(startMin, toMinutes(startHour, 0));
+                    const clampedEnd = Math.min(endMin, toMinutes(endHour, 0));
+                    if (clampedEnd <= clampedStart) continue;
+                    const topPct = ((clampedStart - toMinutes(startHour, 0) + extraTop) / totalHeightMinutes) * 100;
+                    const heightPct = ((clampedEnd - clampedStart) / totalHeightMinutes) * 100;
+                    const color = getStudentColor(c.studentName);
+                    const border = getBorderColor(c.studentName);
+                    const classroomHtml = c.classroom ? `<span class="course-classroom">🏫 ${c.classroom}</span>` : '';
+                    courseBlocks += `<div class="course-block" data-course-id="${c.id}" 
+                                    style="top:${topPct}%;height:${Math.max(heightPct, 3)}%;background:${color};border-left-color:${border};">
+                                    <span class="course-name">${c.courseName}</span>
+                                    <span class="course-student">${c.studentName}</span>
+                                    <span class="course-time">${c.startTime} - ${c.endTime}</span>
+                                    ${classroomHtml}
+                                </div>`;
+                }
+
+                dayColumns += `<div class="day-column" style="${isToday ? 'background:#f8faff;' : ''}">
+                                    ${gridLines}
+                                    ${courseBlocks}
+                                </div>`;
+            }
+
+            const html = `
+                <div class="week-single-wrap">
+                    <div class="week-header">
+                        <span class="week-label">${label} (${labelStr})</span>
+                        <div class="week-nav">
+                            ${showNav ? `<button class="week-nav-float" data-delta="-1">◀</button><button class="week-nav-float" data-delta="1">▶</button>` : `<span style="color:#8a9aa8;font-size:14px;">下周</span>`}
+                        </div>
+                    </div>
+                    <div class="week-grid-container">
+                        <div class="week-grid" data-week-start="${startDateStr}">
+                            <div class="grid-header">
+                                <div class="header-cell" style="background:#fafbfc;border-right:1px solid #eef1f5;"></div>
+                                ${headerCells}
+                            </div>
+                            <div class="grid-body" style="height:${gridHeight}px;">
+                                <div class="time-column" style="height:${gridHeight}px;">
+                                    ${timeMarkers}
+                                </div>
+                                ${dayColumns}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        // ---------- 统计 ----------
+        function updateStatsAndLabel() {
+            const year = state.currentDate.getFullYear();
+            const month = state.currentDate.getMonth();
+
+            if (state.viewMode === 'month') {
+                let total = 0;
+                if (state.subMode === 'single') {
+                    const days = getMonthDays(year, month);
+                    const start = new Date(year, month, 1);
+                    const end = new Date(year, month, days);
+                    total = getTotalHoursForDateRange(start, end);
+                    elDateLabel.textContent = `${year}年${month+1}月`;
+                } else {
+                    const days = getMonthDays(year, month);
+                    const start = new Date(year, month, 1);
+                    const end = new Date(year, month, days);
+                    total = getTotalHoursForDateRange(start, end);
+                    const prevMonth = month === 0 ? 11 : month - 1;
+                    const prevYear = month === 0 ? year - 1 : year;
+                    const nextMonth = month === 11 ? 0 : month + 1;
+                    const nextYear = month === 11 ? year + 1 : year;
+                    elDateLabel.textContent =
+                        `${prevYear}年${prevMonth+1}月 | ${year}年${month+1}月 | ${nextYear}年${nextMonth+1}月`;
+                }
+                elStats.textContent = total.toFixed(1);
+            } else {
+                const start = getWeekStart(state.currentDate);
+                const end = getWeekEnd(start);
+                const total = getTotalHoursForDateRange(start, end);
+                const startStr = `${start.getMonth()+1}/${start.getDate()}`;
+                const endStr = `${end.getMonth()+1}/${end.getDate()}`;
+                elDateLabel.textContent = `${start.getFullYear()}年 ${startStr} - ${endStr}`;
+                elStats.textContent = total.toFixed(1);
+            }
+        }
+
+        // ============================================================
+        //  模态框
+        // ============================================================
+        function openAddModal(prefillDate) {
+            state.editingId = null;
+            state.batchMode = false;
+            elModalTitle.textContent = '📝 添加课程';
+            elModalSub.textContent = '填写课程信息，可批量添加多个时段';
+            elForm.reset();
+            if (prefillDate) fDate.value = prefillDate;
+            else fDate.value = formatDate(state.currentDate);
+            fStartTime.value = '08:00';
+            fEndTime.value = '09:00';
+            fTotalHours.value = '';
+            fClassroom.value = '';
+            fRemainDisplay.textContent = '--';
+            elModalConfirm.textContent = '添加';
+            elModalConfirm.className = 'btn-confirm';
+            elBatchRows.innerHTML = '';
+            elSingleArea.style.display = 'block';
+            elBatchArea.style.display = 'none';
+            elBtnToggleBatch.textContent = '📋 批量模式';
+            fStudentName.oninput = updateRemainField;
+            fTotalHours.oninput = updateRemainField;
+            fStartTime.oninput = updateRemainField;
+            fEndTime.oninput = updateRemainField;
+            courseDropdownList.classList.remove('active');
+            studentDropdownList.classList.remove('active');
+            elModal.classList.add('show');
+            updateRemainField();
+        }
+
+        function openEditModal(courseId) {
+            const c = courses.find(x => x.id === courseId);
+            if (!c) return;
+            state.editingId = courseId;
+            state.batchMode = false;
+            elModalTitle.textContent = '✎ 编辑课程';
+            elModalSub.textContent = '修改课程信息';
+            fCourseName.value = c.courseName;
+            fStudentName.value = c.studentName;
+            fClassroom.value = c.classroom || '';
+            fDate.value = c.date;
+            fStartTime.value = c.startTime;
+            fEndTime.value = c.endTime;
+            const student = students[c.studentName];
+            fTotalHours.value = student ? student.totalHours : '';
+            elModalConfirm.textContent = '更新';
+            elModalConfirm.className = 'btn-confirm';
+            elSingleArea.style.display = 'block';
+            elBatchArea.style.display = 'none';
+            elBtnToggleBatch.textContent = '📋 批量模式';
+            elBatchRows.innerHTML = '';
+            fStudentName.oninput = updateRemainField;
+            fTotalHours.oninput = updateRemainField;
+            fStartTime.oninput = updateRemainField;
+            fEndTime.oninput = updateRemainField;
+            courseDropdownList.classList.remove('active');
+            studentDropdownList.classList.remove('active');
+            elModal.classList.add('show');
+            updateRemainField();
+        }
+
+        function updateRemainField() {
+            const name = fStudentName.value.trim();
+            const total = parseFloat(fTotalHours.value) || 0;
+            if (!name || total === 0) {
+                fRemainDisplay.textContent = '--';
+                return;
+            }
+            const start = fStartTime.value;
+            const end = fEndTime.value;
+            let currentCourseHours = 0;
+            if (start && end) {
+                const [sh, sm] = start.split(':').map(Number);
+                const [eh, em] = end.split(':').map(Number);
+                if (!isNaN(sh) && !isNaN(sm) && !isNaN(eh) && !isNaN(em) && (eh > sh || (eh === sh && em > sm))) {
+                    currentCourseHours = (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
+                }
+            }
+            const excludeId = state.editingId !== null ? state.editingId : null;
+            const used = getStudentUsedHours(name, excludeId);
+            const remain = Math.max(0, total - used - currentCourseHours);
+            fRemainDisplay.textContent = remain.toFixed(1) + ' 小时';
+        }
+
+        function toggleBatchMode() {
+            state.batchMode = !state.batchMode;
+            if (state.batchMode) {
+                elSingleArea.style.display = 'none';
+                elBatchArea.style.display = 'block';
+                elBtnToggleBatch.textContent = '📝 单个模式';
+                if (elBatchRows.children.length === 0) {
+                    addBatchRow();
+                }
+            } else {
+                elSingleArea.style.display = 'block';
+                elBatchArea.style.display = 'none';
+                elBtnToggleBatch.textContent = '📋 批量模式';
+            }
+        }
+
+        function addBatchRow(dateVal, startVal, endVal) {
+            const row = document.createElement('div');
+            row.className = 'batch-row';
+            row.innerHTML = `
+                <input type="date" class="batch-date" value="${dateVal || ''}" placeholder="日期" />
+                <input type="time" class="batch-start" value="${startVal || ''}" placeholder="开始" step="60" />
+                <input type="time" class="batch-end" value="${endVal || ''}" placeholder="结束" step="60" />
+                <button type="button" class="btn-remove-row">✕</button>
+            `;
+            row.querySelector('.btn-remove-row').addEventListener('click', () => {
+                if (elBatchRows.children.length > 1) {
+                    row.remove();
+                } else {
+                    alert('至少保留一行');
+                }
+            });
+            elBatchRows.appendChild(row);
+        }
+
+        function saveCourse(e) {
+            e.preventDefault();
+            const courseName = fCourseName.value.trim();
+            const studentName = fStudentName.value.trim();
+            const classroom = fClassroom.value.trim();
+            const totalHours = parseFloat(fTotalHours.value) || 0;
+
+            if (!courseName || !studentName) {
+                alert('请填写课程名称和学生姓名');
+                return;
+            }
+
+            if (!students[studentName]) {
+                students[studentName] = { totalHours: 0 };
+            }
+            students[studentName].totalHours = totalHours;
+
+            let entries = [];
+            if (state.batchMode) {
+                const rows = elBatchRows.querySelectorAll('.batch-row');
+                for (const row of rows) {
+                    const date = row.querySelector('.batch-date').value;
+                    const start = row.querySelector('.batch-start').value;
+                    const end = row.querySelector('.batch-end').value;
+                    if (date && start && end) {
+                        if (start >= end) {
+                            alert(`日期 ${date} 的时间段无效：开始时间必须早于结束时间`);
+                            return;
+                        }
+                        entries.push({ date, startTime: start, endTime: end });
+                    }
+                }
+                if (entries.length === 0) {
+                    alert('请至少添加一个有效的时段');
+                    return;
+                }
+            } else {
+                const date = fDate.value;
+                const startTime = fStartTime.value;
+                const endTime = fEndTime.value;
+                if (!date || !startTime || !endTime) {
+                    alert('请填写完整日期和时间');
+                    return;
+                }
+                if (startTime >= endTime) {
+                    alert('开始时间必须早于结束时间');
+                    return;
+                }
+                entries.push({ date, startTime, endTime });
+            }
+
+            if (state.editingId !== null) {
+                if (entries.length !== 1) {
+                    alert('编辑模式仅支持单个课程');
+                    return;
+                }
+                const idx = courses.findIndex(c => c.id === state.editingId);
+                if (idx !== -1) {
+                    courses[idx] = { ...courses[idx], courseName, studentName, classroom, ...entries[0] };
+                }
+            } else {
+                for (const entry of entries) {
+                    courses.push({
+                        id: nextId++,
+                        courseName,
+                        studentName,
+                        classroom,
+                        date: entry.date,
+                        startTime: entry.startTime,
+                        endTime: entry.endTime,
+                    });
+                }
+            }
+
+            autoSave();
+            closeModal();
+            render();
+        }
+
+        function closeModal() {
+            elModal.classList.remove('show');
+            state.editingId = null;
+            state.batchMode = false;
+            fStudentName.oninput = null;
+            fTotalHours.oninput = null;
+            fStartTime.oninput = null;
+            fEndTime.oninput = null;
+            elBatchRows.innerHTML = '';
+            elSingleArea.style.display = 'block';
+            elBatchArea.style.display = 'none';
+            elBtnToggleBatch.textContent = '📋 批量模式';
+            courseDropdownList.classList.remove('active');
+            studentDropdownList.classList.remove('active');
+        }
+
+        // ============================================================
+        //  详情
+        // ============================================================
+        function openDetailModal(courseId) {
+            const c = courses.find(x => x.id === courseId);
+            if (!c) return;
+            state.selectedCourseId = courseId;
+            dCourseName.textContent = c.courseName;
+            dStudentName.textContent = c.studentName;
+            dClassroom.textContent = c.classroom || '未设置';
+            const d = parseDate(c.date);
+            dDate.textContent = formatDateDisplay(d);
+            dTime.textContent = `${c.startTime} - ${c.endTime}`;
+            const remain = getStudentRemainHours(c.studentName, null);
+            dRemain.textContent = remain !== null ? remain.toFixed(1) + ' 小时' : '未设置总课时';
+            elDetail.classList.add('show');
+        }
+
+        function closeDetail() {
+            elDetail.classList.remove('show');
+            state.selectedCourseId = null;
+        }
+
+        function deleteSelectedCourse() {
+            if (state.selectedCourseId === null) return;
+            if (!confirm('确定删除该课程吗？')) return;
+            courses = courses.filter(c => c.id !== state.selectedCourseId);
+            autoSave();
+            closeDetail();
+            render();
+        }
+
+        function editSelectedCourse() {
+            if (state.selectedCourseId === null) return;
+            const id = state.selectedCourseId;
+            closeDetail();
+            openEditModal(id);
+        }
+
+        // ============================================================
+        //  视图切换 & 缩放
+        // ============================================================
+        function setView(mode) {
+            state.viewMode = mode;
+            elViewToggle.querySelectorAll('button').forEach(b => {
+                b.classList.toggle('active', b.dataset.view === mode);
+            });
+            elSubToggle.style.display = mode === 'month' ? 'flex' : 'none';
+            state.scaleFactor = 1.0;
+            render();
+        }
+
+        function setSubMode(mode) {
+            state.subMode = mode;
+            elSubToggle.querySelectorAll('button').forEach(b => {
+                b.classList.toggle('active', b.dataset.sub === mode);
+            });
+            state.scaleFactor = 1.0;
+            render();
+        }
+
+        function navigateWeek(delta) {
+            const d = new Date(state.currentDate);
+            d.setDate(d.getDate() + delta * 7);
+            state.currentDate = d;
+            render();
+        }
+
+        function goToToday() {
+            state.currentDate = new Date();
+            render();
+        }
+
+        function zoomInAction() {
+            if (state.viewMode === 'month' && state.subMode === 'single') {
+                state.scaleFactor = Math.min(2.0, state.scaleFactor + 0.1);
+                zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
+                applyZoom();
+            }
+        }
+
+        function zoomOutAction() {
+            if (state.viewMode === 'month' && state.subMode === 'single') {
+                state.scaleFactor = Math.max(0.5, state.scaleFactor - 0.1);
+                zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
+                applyZoom();
+            }
+        }
+
+        // ============================================================
+        //  事件绑定
+        // ============================================================
+        function initEvents() {
+            elViewToggle.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn || !btn.dataset.view) return;
+                setView(btn.dataset.view);
+            });
+
+            elSubToggle.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn || !btn.dataset.sub) return;
+                setSubMode(btn.dataset.sub);
+            });
+
+            elBtnAdd.addEventListener('click', () => openAddModal());
+            elBtnBackToday.addEventListener('click', goToToday);
+
+            elModalCancel.addEventListener('click', closeModal);
+            elModal.addEventListener('click', (e) => {
+                if (e.target === elModal) closeModal();
+            });
+            elForm.addEventListener('submit', saveCourse);
+
+            elBtnToggleBatch.addEventListener('click', toggleBatchMode);
+            elBtnAddBatchRow.addEventListener('click', () => {
+                addBatchRow(fDate.value, fStartTime.value, fEndTime.value);
+            });
+
+            elDetailClose.addEventListener('click', closeDetail);
+            elDetail.addEventListener('click', (e) => {
+                if (e.target === elDetail) closeDetail();
+            });
+            elDetailEdit.addEventListener('click', editSelectedCourse);
+            elDetailDelete.addEventListener('click', deleteSelectedCourse);
+
+            zoomIn.addEventListener('click', zoomInAction);
+            zoomOut.addEventListener('click', zoomOutAction);
+
+            document.addEventListener('keydown', (e) => {
+                if (elModal.classList.contains('show') || elDetail.classList.contains('show')) return;
+                if (e.key === 'ArrowLeft') { e.preventDefault();
+                    navigateWeek(-1); }
+                if (e.key === 'ArrowRight') { e.preventDefault();
+                    navigateWeek(1); }
+                if (e.key === 'm' || e.key === 'M') setView('month');
+                if (e.key === 'w' || e.key === 'W') setView('week');
+                if (e.key === 't' || e.key === 'T') goToToday();
+            });
+
+            setupDropdown(fCourseName, courseDropdownList, 'course');
+            setupDropdown(fStudentName, studentDropdownList, 'student');
+        }
+
+        // ============================================================
+        //  PWA 支持：注入 manifest + 注册 Service Worker
+        // ============================================================
+        function setupPWA() {
+            // 1. 注入 manifest（使用内联 SVG 图标）
+            const iconSvg = (size) =>
+                `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+                    <rect width="${size}" height="${size}" fill="#4f7df3" rx="${size * 0.2}"/>
+                    <text x="${size/2}" y="${size/2 + size*0.08}" font-size="${size*0.5}" text-anchor="middle" dominant-baseline="central">📚</text>
+                </svg>`;
+
+            const manifestData = {
+                name: '课程表',
+                short_name: '课程表',
+                description: '课程管理工具',
+                start_url: './',
+                display: 'standalone',
+                background_color: '#ffffff',
+                theme_color: '#4f7df3',
+                icons: [
+                    { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(192)), sizes: '192x192',
+                        type: 'image/svg+xml' },
+                    { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(512)), sizes: '512x512',
+                        type: 'image/svg+xml' },
+                ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+            const manifestURL = URL.createObjectURL(manifestBlob);
+            const manifestLink = document.getElementById('manifestLink');
+            if (manifestLink) {
+                manifestLink.href = manifestURL;
+            }
+
+            // 2. 注册 Service Worker（用于离线缓存）
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'course-table-v1';
+                    const urlsToCache = ['./'];
+
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(cache => cache.addAll(urlsToCache))
+                                .then(() => self.skipWaiting())
+                        );
+                    });
+
+                    self.addEventListener('activate', event => {
+                        event.waitUntil(self.clients.claim());
+                    });
+
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(response => response || fetch(event.request))
+                        );
+                    });
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swURL = URL.createObjectURL(swBlob);
+                navigator.serviceWorker.register(swURL, { scope: './' })
+                    .then(() => console.log('Service Worker 注册成功'))
+                    .catch(err => console.warn('Service Worker 注册失败:', err));
+            }
+        }
+
+        // ============================================================
+        //  初始化
+        // ============================================================
+        function init() {
+            // 尝试从 localStorage 加载数据
+            const hasSaved = loadData();
+
+            if (!hasSaved || courses.length === 0) {
+                // 如果没有保存的数据，创建示例数据
+                const today = new Date();
+                const ds = formatDate(today);
+                courses.push({
+                    id: nextId++,
+                    courseName: '示例课程',
+                    studentName: '张三',
+                    classroom: 'A101',
+                    date: ds,
+                    startTime: '09:00',
+                    endTime: '10:00',
+                });
+                students['张三'] = { totalHours: 20 };
+                // 保存初始数据
+                autoSave();
+            }
+
+            state.currentDate = new Date();
+            render();
+            initEvents();
+            elSubToggle.style.display = 'flex';
+
+            // 设置 PWA（manifest + service worker）
+            setupPWA();
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>
