@@ -4,13 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>课程表</title>
-
-    <!-- PWA 基础设置 -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="课程表" />
     <meta name="theme-color" content="#4f7df3" />
     <link rel="manifest" id="manifestLink" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
         /* ===== 全局 ===== */
@@ -180,6 +182,32 @@
         }
         .btn-back-today:hover {
             background: #d0ddf5;
+        }
+
+        /* 用户区域 */
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .user-area button {
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #4f7df3;
+        }
+        .user-area button:hover {
+            background: #eef4fe;
+        }
+        .user-area .user-email {
+            color: #4f7df3;
+            font-weight: 500;
         }
 
         /* ===== 主内容 ===== */
@@ -912,6 +940,112 @@
             background: #e2e6ec;
         }
 
+        /* ===== 登录模态框 ===== */
+        .auth-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .auth-modal.show {
+            display: flex;
+        }
+        .auth-box {
+            background: white;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 100%;
+            padding: 32px 28px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.25s ease;
+        }
+        .auth-box h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a2332;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .auth-box .sub-hint {
+            text-align: center;
+            color: #8a9aa8;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .auth-box label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 12px 0 4px 0;
+        }
+        .auth-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: 0.2s;
+            background: #fafbfc;
+            outline: none;
+        }
+        .auth-box input:focus {
+            border-color: #4f7df3;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(79, 125, 243, 0.08);
+        }
+        .auth-box .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .auth-box .actions button {
+            padding: 10px 28px;
+            border-radius: 14px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .auth-box .actions .btn-cancel {
+            background: #f0f2f5;
+            color: #5a6879;
+        }
+        .auth-box .actions .btn-cancel:hover {
+            background: #e2e6ec;
+        }
+        .auth-box .actions .btn-confirm {
+            background: #4f7df3;
+            color: white;
+        }
+        .auth-box .actions .btn-confirm:hover {
+            background: #3a66d9;
+        }
+        .auth-box .switch-mode {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #8a9aa8;
+        }
+        .auth-box .switch-mode a {
+            color: #4f7df3;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .auth-box .error-msg {
+            color: #e06070;
+            font-size: 13px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
         /* ===== 响应式 ===== */
         @media (max-width: 1024px) {
             .month-grid-wrap {
@@ -1018,6 +1152,13 @@
             .month-grid-wrap.single {
                 margin-top: 50px;
             }
+            .user-area {
+                font-size: 12px;
+            }
+            .user-area button {
+                padding: 2px 8px;
+                font-size: 11px;
+            }
         }
         .hidden {
             display: none !important;
@@ -1046,6 +1187,11 @@
                     📊 总课时 <span class="num" id="totalHoursCount">0</span>
                 </div>
                 <div class="nav-date-label" id="dateLabel">2026年8月</div>
+                <div class="user-area" id="userArea">
+                    <span class="user-email" id="userName"></span>
+                    <button id="btnLogin">登录</button>
+                    <button id="btnLogout" style="display:none;">注销</button>
+                </div>
                 <button class="btn-add-nav" id="btnAddNav">＋ 添加课程</button>
             </div>
         </nav>
@@ -1063,7 +1209,30 @@
         </div>
     </div>
 
-    <!-- 添加 / 编辑 模态框 -->
+    <!-- ===== 登录/注册模态框 ===== -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-box">
+            <h2 id="authTitle">登录</h2>
+            <div class="sub-hint" id="authSubHint">使用您的邮箱和密码</div>
+            <form id="authForm">
+                <label>邮箱</label>
+                <input type="email" id="authEmail" placeholder="your@email.com" required />
+                <label>密码</label>
+                <input type="password" id="authPassword" placeholder="至少6位" required />
+                <div class="error-msg" id="authError"></div>
+                <div class="actions">
+                    <button type="button" class="btn-cancel" id="authCancel">取消</button>
+                    <button type="submit" class="btn-confirm" id="authSubmit">登录</button>
+                </div>
+            </form>
+            <div class="switch-mode">
+                <span id="switchText">还没有账号？</span>
+                <a id="switchMode">注册</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 添加 / 编辑 课程模态框 ===== -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-box">
             <h2 id="modalTitle">添加课程</h2>
@@ -1125,7 +1294,7 @@
         </div>
     </div>
 
-    <!-- 课程详情弹窗 -->
+    <!-- ===== 课程详情弹窗 ===== -->
     <div class="detail-overlay" id="detailOverlay">
         <div class="detail-box">
             <h3>📖 课程详情</h3>
@@ -1147,11 +1316,33 @@
 
     <script>
         // ============================================================
-        //  数据 & 状态
+        //  1. Firebase 配置（替换为你的配置）
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5Zt_QYjqrYjOlqWinNYltJ37Lc8kD-4I",
+            authDomain: "course-table-d9958.firebaseapp.com",
+            projectId: "course-table-d9958",
+            storageBucket: "course-table-d9958.firebasestorage.app",
+            messagingSenderId: "140917330128",
+            appId: "1:140917330128:web:46169c98477a8ac4720ed5"
+
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 设置持久化为 LOCAL（关闭浏览器后依然保持登录）
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+        // ============================================================
+        //  2. 数据 & 状态
         // ============================================================
         let courses = [];
         let nextId = 1;
         let students = {};
+        let currentUser = null;
+        let userDocRef = null;
 
         const state = {
             viewMode: 'month',
@@ -1163,47 +1354,6 @@
             scaleFactor: 1.0,
         };
 
-        // ============================================================
-        //  localStorage 数据持久化
-        // ============================================================
-        const STORAGE_KEY = 'courseTableData';
-
-        function saveData() {
-            try {
-                const data = {
-                    courses: courses,
-                    students: students,
-                    nextId: nextId,
-                };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch (e) {
-                console.warn('保存数据失败:', e);
-            }
-        }
-
-        function loadData() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (!raw) return false;
-                const data = JSON.parse(raw);
-                courses = data.courses || [];
-                students = data.students || {};
-                nextId = data.nextId || 1;
-                return true;
-            } catch (e) {
-                console.warn('读取数据失败:', e);
-                return false;
-            }
-        }
-
-        // 在每次数据变更后自动保存
-        function autoSave() {
-            saveData();
-        }
-
-        // ============================================================
-        //  工具函数
-        // ============================================================
         const $ = (s) => document.querySelector(s);
         const $$ = (s) => document.querySelectorAll(s);
 
@@ -1214,12 +1364,29 @@
         const elSubToggle = $('#subToggle');
         const elBtnAdd = $('#btnAddNav');
         const elBtnBackToday = $('#btnBackToday');
-
         const zoomControls = $('#zoomControls');
         const zoomLevel = $('#zoomLevel');
         const zoomIn = $('#zoomIn');
         const zoomOut = $('#zoomOut');
 
+        // 用户相关
+        const btnLogin = $('#btnLogin');
+        const btnLogout = $('#btnLogout');
+        const userNameSpan = $('#userName');
+        const authModal = $('#authModal');
+        const authForm = $('#authForm');
+        const authEmail = $('#authEmail');
+        const authPassword = $('#authPassword');
+        const authSubmit = $('#authSubmit');
+        const authCancel = $('#authCancel');
+        const authError = $('#authError');
+        const authTitle = $('#authTitle');
+        const authSubHint = $('#authSubHint');
+        const switchMode = $('#switchMode');
+        const switchText = $('#switchText');
+        let isLoginMode = true;
+
+        // 课程模态框
         const elModal = $('#modalOverlay');
         const elModalTitle = $('#modalTitle');
         const elModalSub = $('#modalSubHint');
@@ -1256,6 +1423,9 @@
         const elDetailEdit = $('#detailEdit');
         const elDetailDelete = $('#detailDelete');
 
+        // ============================================================
+        //  3. 工具函数
+        // ============================================================
         function pad(n) { return String(n).padStart(2, '0'); }
 
         function formatDate(d) {
@@ -1373,7 +1543,74 @@
         }
 
         // ============================================================
-        //  自定义下拉
+        //  4. 数据读写（Firestore）
+        // ============================================================
+        async function loadDataFromFirestore() {
+            if (!currentUser) return false;
+            try {
+                const doc = await userDocRef.get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    courses = data.courses || [];
+                    students = data.students || {};
+                    nextId = data.nextId || 1;
+                    return true;
+                } else {
+                    // 首次使用，初始化空数据
+                    await userDocRef.set({ courses: [], students: {}, nextId: 1 });
+                    courses = [];
+                    students = {};
+                    nextId = 1;
+                    return true;
+                }
+            } catch (e) {
+                console.warn('读取数据失败:', e);
+                return false;
+            }
+        }
+
+        async function saveDataToFirestore() {
+            if (!currentUser) return;
+            try {
+                await userDocRef.set({
+                    courses: courses,
+                    students: students,
+                    nextId: nextId,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {
+                console.warn('保存数据失败:', e);
+            }
+        }
+
+        // 自动保存包装器
+        function autoSave() {
+            saveDataToFirestore();
+        }
+
+        // 实时监听（跨设备同步）
+        function listenForChanges() {
+            if (!currentUser) return;
+            userDocRef.onSnapshot(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const newCourses = data.courses || [];
+                    const newStudents = data.students || {};
+                    const newNextId = data.nextId || 1;
+                    if (JSON.stringify(courses) !== JSON.stringify(newCourses) ||
+                        JSON.stringify(students) !== JSON.stringify(newStudents) ||
+                        nextId !== newNextId) {
+                        courses = newCourses;
+                        students = newStudents;
+                        nextId = newNextId;
+                        render();
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        //  5. 自定义下拉
         // ============================================================
         function buildDropdownList(inputEl, listEl, dataArray, type) {
             const val = inputEl.value.trim().toLowerCase();
@@ -1456,9 +1693,20 @@
         }
 
         // ============================================================
-        //  渲染
+        //  6. 渲染核心
         // ============================================================
         function render() {
+            if (!currentUser) {
+                elWrap.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;color:#8a9aa8;flex-direction:column;gap:16px;">
+                    <div>👋 请先登录以查看您的课程表</div>
+                    <div style="font-size:14px;color:#b0bcc8;">点击右上角「登录」按钮</div>
+                </div>`;
+                zoomControls.classList.remove('visible');
+                elStats.textContent = '0';
+                elDateLabel.textContent = '未登录';
+                return;
+            }
+
             if (state.viewMode === 'month') {
                 renderMonthView();
             } else {
@@ -1810,7 +2058,91 @@
         }
 
         // ============================================================
-        //  模态框
+        //  7. 认证逻辑
+        // ============================================================
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                currentUser = user;
+                userDocRef = db.collection('users').doc(user.uid);
+                userNameSpan.textContent = user.email || '用户';
+                btnLogin.style.display = 'none';
+                btnLogout.style.display = 'inline-block';
+                await loadDataFromFirestore();
+                listenForChanges();
+                render();
+            } else {
+                currentUser = null;
+                userDocRef = null;
+                userNameSpan.textContent = '';
+                btnLogin.style.display = 'inline-block';
+                btnLogout.style.display = 'none';
+                courses = [];
+                students = {};
+                render();
+            }
+        });
+
+        btnLogin.addEventListener('click', () => {
+            isLoginMode = true;
+            authTitle.textContent = '登录';
+            authSubHint.textContent = '使用您的邮箱和密码';
+            authSubmit.textContent = '登录';
+            switchText.textContent = '还没有账号？';
+            switchMode.textContent = '注册';
+            authError.textContent = '';
+            authEmail.value = '';
+            authPassword.value = '';
+            authModal.classList.add('show');
+        });
+
+        btnLogout.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        switchMode.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authTitle.textContent = isLoginMode ? '登录' : '注册';
+            authSubHint.textContent = isLoginMode ? '使用您的邮箱和密码' : '创建新账号';
+            authSubmit.textContent = isLoginMode ? '登录' : '注册';
+            switchText.textContent = isLoginMode ? '还没有账号？' : '已有账号？';
+            switchMode.textContent = isLoginMode ? '注册' : '登录';
+            authError.textContent = '';
+        });
+
+        authCancel.addEventListener('click', () => {
+            authModal.classList.remove('show');
+        });
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) authModal.classList.remove('show');
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = authEmail.value.trim();
+            const password = authPassword.value.trim();
+            if (!email || !password) {
+                authError.textContent = '请填写邮箱和密码';
+                return;
+            }
+            if (password.length < 6) {
+                authError.textContent = '密码至少6位';
+                return;
+            }
+            authError.textContent = '';
+            try {
+                if (isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                }
+                authModal.classList.remove('show');
+            } catch (err) {
+                authError.textContent = err.message;
+            }
+        });
+
+        // ============================================================
+        //  8. 课程 CRUD（添加、编辑、删除）
         // ============================================================
         function openAddModal(prefillDate) {
             state.editingId = null;
@@ -2026,7 +2358,7 @@
         }
 
         // ============================================================
-        //  详情
+        //  9. 详情
         // ============================================================
         function openDetailModal(courseId) {
             const c = courses.find(x => x.id === courseId);
@@ -2065,7 +2397,7 @@
         }
 
         // ============================================================
-        //  视图切换 & 缩放
+        //  10. 视图切换 & 缩放
         // ============================================================
         function setView(mode) {
             state.viewMode = mode;
@@ -2115,7 +2447,7 @@
         }
 
         // ============================================================
-        //  事件绑定
+        //  11. 事件绑定
         // ============================================================
         function initEvents() {
             elViewToggle.addEventListener('click', (e) => {
@@ -2170,10 +2502,9 @@
         }
 
         // ============================================================
-        //  PWA 支持：注入 manifest + 注册 Service Worker
+        //  12. PWA 支持
         // ============================================================
         function setupPWA() {
-            // 1. 注入 manifest（使用内联 SVG 图标）
             const iconSvg = (size) =>
                 `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
                     <rect width="${size}" height="${size}" fill="#4f7df3" rx="${size * 0.2}"/>
@@ -2203,7 +2534,6 @@
                 manifestLink.href = manifestURL;
             }
 
-            // 2. 注册 Service Worker（用于离线缓存）
             if ('serviceWorker' in navigator) {
                 const swCode = `
                     const CACHE_NAME = 'course-table-v1';
@@ -2237,40 +2567,19 @@
         }
 
         // ============================================================
-        //  初始化
+        //  13. 初始化
         // ============================================================
         function init() {
-            // 尝试从 localStorage 加载数据
-            const hasSaved = loadData();
-
-            if (!hasSaved || courses.length === 0) {
-                // 如果没有保存的数据，创建示例数据
-                const today = new Date();
-                const ds = formatDate(today);
-                courses.push({
-                    id: nextId++,
-                    courseName: '示例课程',
-                    studentName: '张三',
-                    classroom: 'A101',
-                    date: ds,
-                    startTime: '09:00',
-                    endTime: '10:00',
-                });
-                students['张三'] = { totalHours: 20 };
-                // 保存初始数据
-                autoSave();
-            }
-
             state.currentDate = new Date();
             render();
             initEvents();
             elSubToggle.style.display = 'flex';
-
-            // 设置 PWA（manifest + service worker）
             setupPWA();
+
+            // 如果用户已登录，但数据未加载，等待 onAuthStateChanged 触发
+            // 如果未登录，显示登录提示（已在 render 中处理）
         }
 
-        // 启动
         init();
     </script>
 </body>
