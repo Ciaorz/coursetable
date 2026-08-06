@@ -15,7 +15,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ===== 全局 ===== */
+        /* ===== 全局重置 ===== */
         * {
             margin: 0;
             padding: 0;
@@ -183,8 +183,6 @@
         .btn-back-today:hover {
             background: #d0ddf5;
         }
-
-        /* 用户区域 */
         .user-area {
             display: flex;
             align-items: center;
@@ -377,12 +375,12 @@
             flex: 1;
             position: relative;
             min-height: 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
             margin-top: 2px;
         }
         .month-day-cell .course-slot {
+            position: absolute;
+            left: 0;
+            right: 0;
             border-radius: 3px;
             font-size: 8px;
             line-height: 1.2;
@@ -396,7 +394,7 @@
             transition: 0.1s;
             border-left: 2px solid #4f7df3;
             background: rgba(79, 125, 243, 0.10);
-            flex-shrink: 0;
+            z-index: 2;
         }
         .month-day-cell .course-slot:hover {
             opacity: 0.8;
@@ -405,6 +403,8 @@
             font-size: 8px;
             color: #8a9aa8;
             margin-top: 1px;
+            position: relative;
+            z-index: 1;
         }
 
         /* ===== 周视图 ===== */
@@ -466,14 +466,11 @@
             transition: 0.2s;
             border: none;
             user-select: none;
-            position: static !important;
-            transform: none !important;
         }
         .week-nav-float:hover {
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
         }
-
         .week-grid-container {
             padding: 0 4px 4px 4px;
             overflow-x: auto;
@@ -517,7 +514,6 @@
             display: block;
             margin-top: 2px;
         }
-
         .week-grid .grid-body {
             grid-column: 1 / -1;
             display: grid;
@@ -607,6 +603,54 @@
             font-size: 8px;
             color: #8a9aa8;
             margin-top: 1px;
+        }
+
+        /* 当前时间线 */
+        .week-grid .grid-body .current-time-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e06070;
+            z-index: 20;
+            pointer-events: none;
+            border-top: 2px dashed #e06070;
+            opacity: 0.9;
+            transition: top 0.5s ease;
+        }
+        .week-grid .grid-body .current-time-line::after {
+            content: '● 现在';
+            position: absolute;
+            left: 2px;
+            top: -10px;
+            font-size: 10px;
+            color: #e06070;
+            background: white;
+            padding: 0 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* 刷新时间按钮 */
+        .btn-refresh-time {
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 4px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #4f7df3;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-refresh-time:hover {
+            background: #eef4fe;
+            border-color: #4f7df3;
+        }
+        .btn-refresh-time:active {
+            transform: scale(0.95);
         }
 
         /* ===== 模态框 ===== */
@@ -743,7 +787,6 @@
         .modal-actions .btn-secondary:hover {
             background: #d0ddf5;
         }
-
         .batch-area {
             margin-top: 16px;
             border-top: 1px solid #eef1f5;
@@ -1046,6 +1089,101 @@
             text-align: center;
         }
 
+        /* ===== 当日课程列表弹窗 ===== */
+        .day-list-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 997;
+            padding: 20px;
+        }
+        .day-list-overlay.show {
+            display: flex;
+        }
+        .day-list-box {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            padding: 28px 32px 24px 32px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+            animation: modalIn 0.2s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .day-list-box h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a2332;
+            margin-bottom: 4px;
+        }
+        .day-list-box .day-list-date {
+            font-size: 14px;
+            color: #8a9aa8;
+            margin-bottom: 16px;
+        }
+        .day-list-box .day-list-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 14px;
+        }
+        .day-list-box .day-list-item .info {
+            flex: 1;
+        }
+        .day-list-box .day-list-item .info .name {
+            font-weight: 500;
+            color: #1a2332;
+        }
+        .day-list-box .day-list-item .info .meta {
+            font-size: 12px;
+            color: #8a9aa8;
+        }
+        .day-list-box .day-list-item .time {
+            font-weight: 500;
+            color: #4f7df3;
+        }
+        .day-list-box .day-list-empty {
+            text-align: center;
+            color: #b0bcc8;
+            padding: 20px 0;
+        }
+        .day-list-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .day-list-actions button {
+            padding: 8px 20px;
+            border-radius: 14px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .day-list-actions .btn-add-day {
+            background: #4f7df3;
+            color: white;
+        }
+        .day-list-actions .btn-add-day:hover {
+            background: #3a66d9;
+        }
+        .day-list-actions .btn-close-day {
+            background: #f0f2f5;
+            color: #5a6879;
+        }
+        .day-list-actions .btn-close-day:hover {
+            background: #e2e6ec;
+        }
+
         /* ===== 响应式 ===== */
         @media (max-width: 1024px) {
             .month-grid-wrap {
@@ -1158,6 +1296,14 @@
             .user-area button {
                 padding: 2px 8px;
                 font-size: 11px;
+            }
+            .day-list-box {
+                max-width: 95%;
+                padding: 20px;
+            }
+            .btn-refresh-time {
+                font-size: 11px;
+                padding: 2px 10px;
             }
         }
         .hidden {
@@ -1314,9 +1460,22 @@
         </div>
     </div>
 
+    <!-- ===== 当日课程列表弹窗 ===== -->
+    <div class="day-list-overlay" id="dayListOverlay">
+        <div class="day-list-box">
+            <h3>📅 课程列表</h3>
+            <div class="day-list-date" id="dayListDate">--</div>
+            <div id="dayListContent"></div>
+            <div class="day-list-actions">
+                <button class="btn-close-day" id="dayListClose">关闭</button>
+                <button class="btn-add-day" id="dayListAdd">＋ 添加课程</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================================
-        //  1. Firebase 配置（替换为你的配置）
+        //  1. Firebase 配置（请替换为您自己的项目配置）
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD5Zt_QYjqrYjOlqWinNYltJ37Lc8kD-4I",
@@ -1325,14 +1484,11 @@
             storageBucket: "course-table-d9958.firebasestorage.app",
             messagingSenderId: "140917330128",
             appId: "1:140917330128:web:46169c98477a8ac4720ed5"
-
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-
-        // 设置持久化为 LOCAL（关闭浏览器后依然保持登录）
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         // ============================================================
@@ -1422,6 +1578,14 @@
         const elDetailClose = $('#detailClose');
         const elDetailEdit = $('#detailEdit');
         const elDetailDelete = $('#detailDelete');
+
+        // 当日课程列表弹窗
+        const dayListOverlay = $('#dayListOverlay');
+        const dayListDate = $('#dayListDate');
+        const dayListContent = $('#dayListContent');
+        const dayListClose = $('#dayListClose');
+        const dayListAdd = $('#dayListAdd');
+        let dayListTargetDate = '';
 
         // ============================================================
         //  3. 工具函数
@@ -1556,7 +1720,6 @@
                     nextId = data.nextId || 1;
                     return true;
                 } else {
-                    // 首次使用，初始化空数据
                     await userDocRef.set({ courses: [], students: {}, nextId: 1 });
                     courses = [];
                     students = {};
@@ -1583,12 +1746,10 @@
             }
         }
 
-        // 自动保存包装器
         function autoSave() {
             saveDataToFirestore();
         }
 
-        // 实时监听（跨设备同步）
         function listenForChanges() {
             if (!currentUser) return;
             userDocRef.onSnapshot(doc => {
@@ -1697,10 +1858,11 @@
         // ============================================================
         function render() {
             if (!currentUser) {
-                elWrap.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;color:#8a9aa8;flex-direction:column;gap:16px;">
-                    <div>👋 请先登录以查看您的课程表</div>
-                    <div style="font-size:14px;color:#b0bcc8;">点击右上角「登录」按钮</div>
-                </div>`;
+                elWrap.innerHTML =
+                    `<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;color:#8a9aa8;flex-direction:column;gap:16px;">
+                        <div>👋 请先登录以查看您的课程表</div>
+                        <div style="font-size:14px;color:#b0bcc8;">点击右上角「登录」按钮</div>
+                    </div>`;
                 zoomControls.classList.remove('visible');
                 elStats.textContent = '0';
                 elDateLabel.textContent = '未登录';
@@ -1761,19 +1923,20 @@
             html += '</div>';
             elWrap.innerHTML = html;
 
+            // 绑定事件：单击日期格子 -> 显示当日课程列表
             elWrap.querySelectorAll('.month-day-cell').forEach(el => {
                 const ds = el.dataset.date;
                 if (!ds) return;
-                if (!el.classList.contains('other-month')) {
-                    el.addEventListener('click', (e) => {
-                        if (e.target.closest('.course-slot')) return;
-                        openAddModal(ds);
-                    });
-                } else {
+                if (el.classList.contains('other-month')) {
                     el.addEventListener('click', () => {
                         const d = parseDate(ds);
                         state.currentDate = d;
                         render();
+                    });
+                } else {
+                    el.addEventListener('click', (e) => {
+                        if (e.target.closest('.course-slot')) return;
+                        showDayCourses(ds);
                     });
                 }
                 el.querySelectorAll('.course-slot').forEach(slot => {
@@ -1801,6 +1964,10 @@
                 <div class="month-days-grid">`;
 
             const prevMonthDays = getMonthDays(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
+            const dayStart = 8 * 60;
+            const dayEnd = 22 * 60;
+            const totalDayMinutes = dayEnd - dayStart;
+
             for (let i = 0; i < totalSlots; i++) {
                 let displayDay, displayMonth, displayYear, isOther = false;
                 if (i < startOffset) {
@@ -1834,9 +2001,6 @@
                             <div class="day-number">${displayDay}</div>
                             <div class="course-slots">`;
 
-                const dayStart = 8 * 60;
-                const dayEnd = 22 * 60;
-                const totalDayMinutes = dayEnd - dayStart;
                 const maxShow = 6;
                 const showCourses = dayCourses.slice(0, maxShow);
                 const remaining = dayCourses.length - maxShow;
@@ -1854,7 +2018,7 @@
                     const color = getStudentColor(c.studentName);
                     const border = getBorderColor(c.studentName);
                     html += `<div class="course-slot" data-course-id="${c.id}" 
-                                style="background:${color};border-left-color:${border};width:100%;height:${Math.max(heightPct, 4)}%;margin-top:${topPct}%;position:relative;margin-bottom:1px;">
+                                style="background:${color};border-left-color:${border};top:${topPct}%;height:${Math.max(heightPct, 4)}%;">
                                 ${c.startTime} - ${c.endTime}
                             </div>`;
                 }
@@ -1879,6 +2043,11 @@
             html += renderSingleWeekGrid(nextWeekStart, '下周', false);
             html += `</div>`;
             elWrap.innerHTML = html;
+
+            // 绑定刷新按钮
+            elWrap.querySelectorAll('.btn-refresh-time').forEach(btn => {
+                btn.addEventListener('click', updateCurrentTimeLines);
+            });
 
             elWrap.querySelectorAll('.week-nav-float').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -1912,6 +2081,9 @@
                     openAddModal(formatDate(targetDate));
                 });
             });
+
+            // 初次显示时间线
+            updateCurrentTimeLines();
         }
 
         function renderSingleWeekGrid(weekStart, label, showNav) {
@@ -1924,9 +2096,8 @@
             const gridHeight = 680;
             const startHour = 8,
                 endHour = 22;
-            const extraTop = 30,
-                extraBottom = 30;
-            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop + extraBottom;
+            const extraTop = 30;
+            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop;
 
             let headerCells = '';
             const dayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -1955,7 +2126,6 @@
                 const dateObj = dayDates[i];
                 const dateStr = formatDate(dateObj);
                 const dayCourses = getCoursesForDate(dateStr);
-                const isToday = dateStr === todayStr;
 
                 let gridLines = '';
                 for (let h = startHour; h <= endHour; h++) {
@@ -1987,7 +2157,7 @@
                                 </div>`;
                 }
 
-                dayColumns += `<div class="day-column" style="${isToday ? 'background:#f8faff;' : ''}">
+                dayColumns += `<div class="day-column">
                                     ${gridLines}
                                     ${courseBlocks}
                                 </div>`;
@@ -1999,6 +2169,7 @@
                         <span class="week-label">${label} (${labelStr})</span>
                         <div class="week-nav">
                             ${showNav ? `<button class="week-nav-float" data-delta="-1">◀</button><button class="week-nav-float" data-delta="1">▶</button>` : `<span style="color:#8a9aa8;font-size:14px;">下周</span>`}
+                            <button class="btn-refresh-time">🔄 刷新时间</button>
                         </div>
                     </div>
                     <div class="week-grid-container">
@@ -2012,12 +2183,37 @@
                                     ${timeMarkers}
                                 </div>
                                 ${dayColumns}
+                                <!-- 当前时间线 -->
+                                <div class="current-time-line" style="display:none;"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
             return html;
+        }
+
+        // 更新时间线位置（可手动调用）
+        function updateCurrentTimeLines() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            // 只在 8:00-22:00 之间显示
+            if (hour < 8 || hour > 22) {
+                document.querySelectorAll('.current-time-line').forEach(el => el.style.display = 'none');
+                return;
+            }
+            const totalMinutes = (hour - 8) * 60 + minute;
+            const startHour = 8,
+                endHour = 22;
+            const extraTop = 30;
+            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop;
+            const pct = (totalMinutes / totalHeightMinutes) * 100;
+
+            document.querySelectorAll('.current-time-line').forEach(el => {
+                el.style.display = 'block';
+                el.style.top = pct + '%';
+            });
         }
 
         // ---------- 统计 ----------
@@ -2142,7 +2338,7 @@
         });
 
         // ============================================================
-        //  8. 课程 CRUD（添加、编辑、删除）
+        //  8. 课程 CRUD
         // ============================================================
         function openAddModal(prefillDate) {
             state.editingId = null;
@@ -2397,7 +2593,45 @@
         }
 
         // ============================================================
-        //  10. 视图切换 & 缩放
+        //  10. 当日课程列表
+        // ============================================================
+        function showDayCourses(dateStr) {
+            dayListTargetDate = dateStr;
+            const dateObj = parseDate(dateStr);
+            dayListDate.textContent = formatDateDisplay(dateObj);
+            const dayCourses = getCoursesForDate(dateStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+            if (dayCourses.length === 0) {
+                dayListContent.innerHTML = `<div class="day-list-empty">📭 当日暂无课程</div>`;
+            } else {
+                let html = '';
+                for (const c of dayCourses) {
+                    html += `
+                        <div class="day-list-item">
+                            <div class="info">
+                                <div class="name">${c.courseName}</div>
+                                <div class="meta">👤 ${c.studentName} ${c.classroom ? '🏫 '+c.classroom : ''}</div>
+                            </div>
+                            <div class="time">${c.startTime} - ${c.endTime}</div>
+                        </div>
+                    `;
+                }
+                dayListContent.innerHTML = html;
+            }
+            dayListOverlay.classList.add('show');
+        }
+
+        function closeDayList() {
+            dayListOverlay.classList.remove('show');
+        }
+
+        function addCourseFromDayList() {
+            closeDayList();
+            openAddModal(dayListTargetDate);
+        }
+
+        // ============================================================
+        //  11. 视图切换 & 缩放
         // ============================================================
         function setView(mode) {
             state.viewMode = mode;
@@ -2447,7 +2681,7 @@
         }
 
         // ============================================================
-        //  11. 事件绑定
+        //  12. 事件绑定
         // ============================================================
         function initEvents() {
             elViewToggle.addEventListener('click', (e) => {
@@ -2486,8 +2720,16 @@
             zoomIn.addEventListener('click', zoomInAction);
             zoomOut.addEventListener('click', zoomOutAction);
 
+            // 当日列表事件
+            dayListClose.addEventListener('click', closeDayList);
+            dayListOverlay.addEventListener('click', (e) => {
+                if (e.target === dayListOverlay) closeDayList();
+            });
+            dayListAdd.addEventListener('click', addCourseFromDayList);
+
             document.addEventListener('keydown', (e) => {
-                if (elModal.classList.contains('show') || elDetail.classList.contains('show')) return;
+                if (elModal.classList.contains('show') || elDetail.classList.contains('show') || dayListOverlay.classList
+                    .contains('show')) return;
                 if (e.key === 'ArrowLeft') { e.preventDefault();
                     navigateWeek(-1); }
                 if (e.key === 'ArrowRight') { e.preventDefault();
@@ -2502,7 +2744,7 @@
         }
 
         // ============================================================
-        //  12. PWA 支持
+        //  13. PWA 支持
         // ============================================================
         function setupPWA() {
             const iconSvg = (size) =>
@@ -2567,7 +2809,7 @@
         }
 
         // ============================================================
-        //  13. 初始化
+        //  14. 初始化
         // ============================================================
         function init() {
             state.currentDate = new Date();
@@ -2575,9 +2817,6 @@
             initEvents();
             elSubToggle.style.display = 'flex';
             setupPWA();
-
-            // 如果用户已登录，但数据未加载，等待 onAuthStateChanged 触发
-            // 如果未登录，显示登录提示（已在 render 中处理）
         }
 
         init();
