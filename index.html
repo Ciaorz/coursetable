@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>课程表</title>
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="课程表" />
-    <meta name="theme-color" content="#4f7df3" />
+    <!-- 离线 PWA 支持 -->
     <link rel="manifest" id="manifestLink" />
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -15,1303 +12,177 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ===== 全局重置 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
-        body {
-            background: #f4f6fa;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-        #app {
-            max-width: 1500px;
-            width: 100%;
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 40px);
-        }
+        /* ===== 全局样式 ===== */
+        * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+        body { background:#f4f6fa; min-height:100vh; display:flex; justify-content:center; padding:20px; }
+        #app { max-width:1500px; width:100%; background:white; border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,0.08); overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 40px); }
 
-        /* ===== 导航栏 ===== */
-        .navbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 24px;
-            background: white;
-            border-bottom: 1px solid #eef1f5;
-            flex-shrink: 0;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .navbar-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1a2332;
-        }
-        .navbar-title span {
-            color: #4f7df3;
-        }
-        .view-toggle {
-            display: flex;
-            gap: 4px;
-            background: #f0f2f5;
-            border-radius: 10px;
-            padding: 4px;
-        }
-        .view-toggle button {
-            border: none;
-            background: transparent;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #5a6879;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .view-toggle button.active {
-            background: white;
-            color: #1a2332;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-        .view-toggle button:hover:not(.active) {
-            color: #1a2332;
-        }
-        .sub-toggle {
-            display: flex;
-            gap: 4px;
-            background: #f0f2f5;
-            border-radius: 8px;
-            padding: 3px;
-            margin-left: 4px;
-        }
-        .sub-toggle button {
-            border: none;
-            background: transparent;
-            padding: 4px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #5a6879;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .sub-toggle button.active {
-            background: white;
-            color: #1a2332;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        }
-        .navbar-stats {
-            font-size: 15px;
-            font-weight: 500;
-            color: #2c3e50;
-            background: #f0f4fe;
-            padding: 6px 18px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
-        .navbar-stats .num {
-            color: #4f7df3;
-            font-weight: 700;
-            font-size: 18px;
-        }
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .nav-date-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #2c3e50;
-            background: #f8f9fc;
-            padding: 4px 16px;
-            border-radius: 16px;
-            white-space: nowrap;
-        }
-        .btn-add-nav {
-            background: #4f7df3;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-        }
-        .btn-add-nav:hover {
-            background: #3a66d9;
-            transform: scale(1.02);
-        }
-        .btn-back-today {
-            background: #e8edf8;
-            color: #1a2332;
-            border: none;
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        .btn-back-today:hover {
-            background: #d0ddf5;
-        }
-        .user-area {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #2c3e50;
-        }
-        .user-area button {
-            background: transparent;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 4px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #4f7df3;
-        }
-        .user-area button:hover {
-            background: #eef4fe;
-        }
-        .user-area .user-email {
-            color: #4f7df3;
-            font-weight: 500;
-        }
+        /* 导航栏 */
+        .navbar { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; background:white; border-bottom:1px solid #eef1f5; flex-shrink:0; flex-wrap:wrap; gap:8px; }
+        .navbar-left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .navbar-title { font-size:20px; font-weight:700; color:#1a2332; }
+        .navbar-title span { color:#4f7df3; }
+        .view-toggle { display:flex; gap:4px; background:#f0f2f5; border-radius:10px; padding:4px; }
+        .view-toggle button { border:none; background:transparent; padding:6px 16px; border-radius:8px; font-size:14px; font-weight:500; color:#5a6879; cursor:pointer; transition:.2s; }
+        .view-toggle button.active { background:white; color:#1a2332; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .sub-toggle { display:flex; gap:4px; background:#f0f2f5; border-radius:8px; padding:3px; margin-left:4px; }
+        .sub-toggle button { border:none; background:transparent; padding:4px 14px; border-radius:6px; font-size:13px; font-weight:500; color:#5a6879; cursor:pointer; transition:.2s; }
+        .sub-toggle button.active { background:white; color:#1a2332; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+        .navbar-stats { font-size:15px; font-weight:500; color:#2c3e50; background:#f0f4fe; padding:6px 18px; border-radius:20px; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+        .navbar-stats .num { color:#4f7df3; font-weight:700; font-size:18px; }
+        .navbar-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .nav-date-label { font-size:14px; font-weight:500; color:#2c3e50; background:#f8f9fc; padding:4px 16px; border-radius:16px; white-space:nowrap; }
+        .btn-add-nav { background:#4f7df3; color:white; border:none; padding:8px 20px; border-radius:20px; font-size:14px; font-weight:600; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+        .btn-add-nav:hover { background:#3a66d9; transform:scale(1.02); }
+        .btn-back-today { background:#e8edf8; color:#1a2332; border:none; padding:6px 18px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; transition:.2s; white-space:nowrap; }
+        .btn-back-today:hover { background:#d0ddf5; }
+        .data-tools { display:flex; align-items:center; gap:4px; }
+        .data-tools button { background:transparent; border:1px solid #e2e8f0; border-radius:16px; padding:4px 12px; font-size:12px; cursor:pointer; transition:.2s; color:#4f7df3; }
+        .data-tools button:hover { background:#eef4fe; }
 
-        /* ===== 主内容 ===== */
-        .main-content {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-            position: relative;
-        }
-        .calendar-wrap {
-            flex: 1;
-            overflow: auto;
-            padding: 16px 20px 20px 20px;
-            background: #ffffff;
-        }
-        .calendar-wrap::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .calendar-wrap::-webkit-scrollbar-thumb {
-            background: #d0d7e2;
-            border-radius: 8px;
-        }
+        /* 模式切换 & 用户状态 */
+        .mode-switch { display:flex; align-items:center; gap:6px; font-size:13px; color:#2c3e50; }
+        .mode-switch .mode-label { font-weight:500; }
+        .mode-switch button { background:transparent; border:1px solid #e2e8f0; border-radius:16px; padding:4px 12px; font-size:12px; cursor:pointer; transition:.2s; color:#4f7df3; }
+        .mode-switch button:hover { background:#eef4fe; }
+        .mode-switch .user-email { font-weight:500; color:#4f7df3; margin-left:4px; }
 
-        /* ===== 缩放按钮 ===== */
-        .zoom-controls {
-            position: absolute;
-            top: 16px;
-            right: 20px;
-            z-index: 50;
-            display: none;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(4px);
-            padding: 4px 8px;
-            border-radius: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-        .zoom-controls.visible {
-            display: flex;
-        }
-        .zoom-controls button {
-            background: transparent;
-            border: none;
-            font-size: 22px;
-            font-weight: 300;
-            color: #2c3e50;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.7;
-        }
-        .zoom-controls button:hover {
-            background: rgba(79, 125, 243, 0.12);
-            opacity: 1;
-        }
-        .zoom-controls .zoom-level {
-            font-size: 13px;
-            font-weight: 600;
-            color: #4f7df3;
-            min-width: 40px;
-            text-align: center;
-            line-height: 32px;
-        }
+        /* 主内容 */
+        .main-content { flex:1; display:flex; overflow:hidden; position:relative; }
+        .calendar-wrap { flex:1; overflow:auto; padding:16px 20px 20px 20px; background:#ffffff; }
+        .calendar-wrap::-webkit-scrollbar { width:6px; height:6px; }
+        .calendar-wrap::-webkit-scrollbar-thumb { background:#d0d7e2; border-radius:8px; }
 
-        /* ===== 月视图 ===== */
-        .month-grid-wrap {
-            display: flex;
-            gap: 28px;
-            justify-content: center;
-            align-items: flex-start;
-        }
-        .month-grid-wrap.single {
-            gap: 0;
-            justify-content: center;
-            margin-top: 60px;
-        }
-        .month-grid-wrap.single .month-card {
-            max-width: 800px;
-            width: 100%;
-            transition: transform 0.2s ease;
-            transform-origin: top center;
-        }
-        .month-card {
-            flex: 1;
-            min-width: 260px;
-            max-width: 420px;
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #eef1f5;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-        }
-        .month-card-header {
-            padding: 10px 16px 6px 16px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 16px;
-            color: #1a2332;
-        }
-        .month-weekday-row {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            padding: 0 8px;
-            gap: 2px;
-        }
-        .month-weekday-row div {
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: #8a9aa8;
-            padding: 4px 0 2px 0;
-        }
-        .month-days-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            padding: 0 8px 8px 8px;
-        }
-        .month-day-cell {
-            aspect-ratio: 1 / 1;
-            min-height: 70px;
-            background: #fafbfc;
-            border-radius: 8px;
-            padding: 3px 4px;
-            cursor: pointer;
-            transition: 0.15s;
-            border: 1px solid transparent;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .month-day-cell:hover {
-            background: #f0f4fe;
-            border-color: #d0ddf5;
-        }
-        .month-day-cell.other-month {
-            color: #b0bcc8;
-            background: #f8f9fb;
-        }
-        .month-day-cell.other-month .day-number {
-            color: #b0bcc8;
-        }
-        .month-day-cell .day-number {
-            font-size: 14px;
-            font-weight: 500;
-            color: #1a2332;
-            line-height: 1.2;
-            margin-bottom: 2px;
-            flex-shrink: 0;
-        }
-        .month-day-cell.today {
-            border-color: #4f7df3;
-            background: #f5f8ff;
-        }
-        .month-day-cell.today .day-number {
-            color: #4f7df3;
-        }
-        .month-day-cell .course-slots {
-            flex: 1;
-            position: relative;
-            min-height: 40px;
-            margin-top: 2px;
-        }
-        .month-day-cell .course-slot {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-radius: 3px;
-            font-size: 8px;
-            line-height: 1.2;
-            padding: 1px 3px;
-            color: #1a2332;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-            transition: 0.1s;
-            border-left: 2px solid #4f7df3;
-            background: rgba(79, 125, 243, 0.10);
-            z-index: 2;
-        }
-        .month-day-cell .course-slot:hover {
-            opacity: 0.8;
-        }
-        .month-day-cell .more-indicator {
-            font-size: 8px;
-            color: #8a9aa8;
-            margin-top: 1px;
-            position: relative;
-            z-index: 1;
-        }
+        /* 缩放按钮 */
+        .zoom-controls { position:absolute; top:16px; right:20px; z-index:50; display:none; gap:6px; background:rgba(255,255,255,0.75); backdrop-filter:blur(4px); padding:4px 8px; border-radius:24px; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid rgba(255,255,255,0.5); }
+        .zoom-controls.visible { display:flex; }
+        .zoom-controls button { background:transparent; border:none; font-size:22px; font-weight:300; color:#2c3e50; width:32px; height:32px; border-radius:50%; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; opacity:.7; }
+        .zoom-controls button:hover { background:rgba(79,125,243,0.12); opacity:1; }
+        .zoom-controls .zoom-level { font-size:13px; font-weight:600; color:#4f7df3; min-width:40px; text-align:center; line-height:32px; }
 
-        /* ===== 周视图 ===== */
-        .week-dual-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-        .week-single-wrap {
-            position: relative;
-            border: 1px solid #eef1f5;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #fafbfc;
-        }
-        .week-single-wrap .week-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 16px;
-            background: white;
-            border-bottom: 1px solid #eef1f5;
-            font-weight: 600;
-            font-size: 15px;
-            color: #1a2332;
-        }
-        .week-single-wrap .week-header .week-nav {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .week-single-wrap .week-header .week-nav button {
-            background: transparent;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: #8a9aa8;
-            padding: 0 8px;
-            transition: 0.2s;
-            opacity: 0.6;
-        }
-        .week-single-wrap .week-header .week-nav button:hover {
-            color: #1a2332;
-            opacity: 1;
-        }
-        .week-nav-float {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(2px);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: #2c3e50;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: 0.2s;
-            border: none;
-            user-select: none;
-        }
-        .week-nav-float:hover {
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
-        }
-        .week-grid-container {
-            padding: 0 4px 4px 4px;
-            overflow-x: auto;
-        }
-        .week-grid {
-            display: grid;
-            grid-template-columns: 60px repeat(7, 1fr);
-            grid-template-rows: auto 1fr;
-            min-width: 700px;
-            border: 1px solid #eef1f5;
-            border-radius: 8px;
-            background: white;
-            overflow: hidden;
-        }
-        .week-grid .grid-header {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: 60px repeat(7, 1fr);
-            background: #fafbfc;
-            border-bottom: 1px solid #eef1f5;
-        }
-        .week-grid .grid-header .header-cell {
-            padding: 8px 4px 6px 4px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
-            color: #2c3e50;
-            border-right: 1px solid #eef1f5;
-        }
-        .week-grid .grid-header .header-cell:last-child {
-            border-right: none;
-        }
-        .week-grid .grid-header .header-cell.today {
-            background: #eef4fe;
-            color: #4f7df3;
-        }
-        .week-grid .grid-header .header-cell .week-date-sub {
-            font-weight: 400;
-            font-size: 12px;
-            color: #8a9aa8;
-            display: block;
-            margin-top: 2px;
-        }
-        .week-grid .grid-body {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: 60px repeat(7, 1fr);
-            position: relative;
-            height: 680px;
-        }
-        .week-grid .grid-body .time-column {
-            position: relative;
-            background: #fafbfc;
-            border-right: 1px solid #eef1f5;
-            height: 100%;
-        }
-        .week-grid .grid-body .time-column .time-marker {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed #eef1f5;
-            pointer-events: none;
-        }
-        .week-grid .grid-body .time-column .time-marker span {
-            position: absolute;
-            left: 4px;
-            top: -8px;
-            font-size: 9px;
-            color: #b0bcc8;
-            background: #fafbfc;
-            padding: 0 4px;
-            white-space: nowrap;
-        }
-        .week-grid .grid-body .day-column {
-            position: relative;
-            background: white;
-            border-right: 1px solid #eef1f5;
-            height: 100%;
-            overflow: hidden;
-        }
-        .week-grid .grid-body .day-column:last-child {
-            border-right: none;
-        }
-        .week-grid .grid-body .day-column.today {
-            background: #f8faff;
-        }
-        .week-grid .grid-body .day-column .day-grid-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed #eef1f5;
-            pointer-events: none;
-        }
-        .week-grid .grid-body .day-column .course-block {
-            position: absolute;
-            left: 4px;
-            right: 4px;
-            border-radius: 6px;
-            padding: 2px 6px;
-            font-size: 11px;
-            font-weight: 500;
-            color: #1a2332;
-            cursor: pointer;
-            overflow: hidden;
-            transition: 0.15s;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            line-height: 1.3;
-            border-left: 3px solid #4f7df3;
-            background: rgba(79, 125, 243, 0.10);
-        }
-        .week-grid .grid-body .day-column .course-block:hover {
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(79, 125, 243, 0.2);
-            filter: brightness(0.96);
-        }
-        .week-grid .grid-body .day-column .course-block .course-name {
-            font-weight: 600;
-            font-size: 12px;
-        }
-        .week-grid .grid-body .day-column .course-block .course-student {
-            font-size: 10px;
-            color: #5a6879;
-        }
-        .week-grid .grid-body .day-column .course-block .course-time {
-            font-size: 9px;
-            color: #7a8a9a;
-        }
-        .week-grid .grid-body .day-column .course-block .course-classroom {
-            font-size: 8px;
-            color: #8a9aa8;
-            margin-top: 1px;
-        }
+        /* ===== 月视图 ===== (略，与之前相同，但保留完整) */
+        .month-grid-wrap { display:flex; gap:28px; justify-content:center; align-items:flex-start; }
+        .month-grid-wrap.single { gap:0; justify-content:center; margin-top:60px; }
+        .month-grid-wrap.single .month-card { max-width:800px; width:100%; transition:transform .2s ease; transform-origin:top center; }
+        .month-card { flex:1; min-width:260px; max-width:420px; background:white; border-radius:16px; border:1px solid #eef1f5; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
+        .month-card-header { padding:10px 16px 6px 16px; text-align:center; font-weight:600; font-size:16px; color:#1a2332; }
+        .month-weekday-row { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px; gap:2px; }
+        .month-weekday-row div { text-align:center; font-size:12px; font-weight:600; color:#8a9aa8; padding:4px 0 2px 0; }
+        .month-days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; padding:0 8px 8px 8px; }
+        .month-day-cell { aspect-ratio:1/1; min-height:70px; background:#fafbfc; border-radius:8px; padding:3px 4px; cursor:pointer; transition:.15s; border:1px solid transparent; position:relative; overflow:hidden; display:flex; flex-direction:column; }
+        .month-day-cell:hover { background:#f0f4fe; border-color:#d0ddf5; }
+        .month-day-cell.other-month { color:#b0bcc8; background:#f8f9fb; }
+        .month-day-cell.other-month .day-number { color:#b0bcc8; }
+        .month-day-cell .day-number { font-size:14px; font-weight:500; color:#1a2332; line-height:1.2; margin-bottom:2px; flex-shrink:0; }
+        .month-day-cell.today { border-color:#4f7df3; background:#f5f8ff; }
+        .month-day-cell.today .day-number { color:#4f7df3; }
+        .month-day-cell .course-slots { flex:1; position:relative; min-height:40px; display:flex; flex-direction:column; gap:1px; margin-top:2px; }
+        .month-day-cell .course-slot { border-radius:3px; font-size:8px; line-height:1.2; padding:1px 3px; color:#1a2332; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:.1s; border-left:2px solid #4f7df3; background:rgba(79,125,243,0.10); flex-shrink:0; min-height:3px; }
+        .month-day-cell .course-slot:hover { opacity:.8; }
+        .month-day-cell .more-indicator { font-size:8px; color:#8a9aa8; margin-top:1px; }
 
-        /* 当前时间线 */
-        .week-grid .grid-body .current-time-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #e06070;
-            z-index: 20;
-            pointer-events: none;
-            border-top: 2px dashed #e06070;
-            opacity: 0.9;
-            transition: top 0.5s ease;
-        }
-        .week-grid .grid-body .current-time-line::after {
-            content: '● 现在';
-            position: absolute;
-            left: 2px;
-            top: -10px;
-            font-size: 10px;
-            color: #e06070;
-            background: white;
-            padding: 0 4px;
-            border-radius: 4px;
-            white-space: nowrap;
-        }
+        /* ===== 周视图 ===== (略) */
+        .week-dual-wrap { display:flex; flex-direction:column; gap:30px; }
+        .week-single-wrap { position:relative; border:1px solid #eef1f5; border-radius:16px; overflow:hidden; background:#fafbfc; }
+        .week-single-wrap .week-header { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; background:white; border-bottom:1px solid #eef1f5; font-weight:600; font-size:15px; color:#1a2332; }
+        .week-single-wrap .week-header .week-nav { display:flex; gap:12px; align-items:center; }
+        .week-single-wrap .week-header .week-nav button { background:transparent; border:none; font-size:20px; cursor:pointer; color:#8a9aa8; padding:0 8px; transition:.2s; opacity:.6; }
+        .week-single-wrap .week-header .week-nav button:hover { color:#1a2332; opacity:1; }
+        .week-nav-float { background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:50%; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; font-size:22px; color:#2c3e50; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:.2s; border:none; user-select:none; position:static !important; transform:none !important; }
+        .week-nav-float:hover { background:rgba(255,255,255,0.9); box-shadow:0 4px 14px rgba(0,0,0,0.15); }
+        .week-grid-container { padding:0 4px 4px 4px; overflow-x:auto; }
+        .week-grid { display:grid; grid-template-columns:60px repeat(7,1fr); grid-template-rows:auto 1fr; min-width:700px; border:1px solid #eef1f5; border-radius:8px; background:white; overflow:hidden; position:relative; }
+        .week-grid .grid-header { grid-column:1/-1; display:grid; grid-template-columns:60px repeat(7,1fr); background:#fafbfc; border-bottom:1px solid #eef1f5; }
+        .week-grid .grid-header .header-cell { padding:8px 4px 6px 4px; text-align:center; font-weight:600; font-size:14px; color:#2c3e50; border-right:1px solid #eef1f5; }
+        .week-grid .grid-header .header-cell:last-child { border-right:none; }
+        .week-grid .grid-header .header-cell.today { background:#eef4fe; color:#4f7df3; }
+        .week-grid .grid-header .header-cell .week-date-sub { font-weight:400; font-size:12px; color:#8a9aa8; display:block; margin-top:2px; }
+        .week-grid .grid-body { grid-column:1/-1; display:grid; grid-template-columns:60px repeat(7,1fr); position:relative; height:680px; }
+        .week-grid .grid-body .time-column { position:relative; background:#fafbfc; border-right:1px solid #eef1f5; height:100%; }
+        .week-grid .grid-body .time-column .time-marker { position:absolute; left:0; right:0; border-top:1px dashed #eef1f5; pointer-events:none; }
+        .week-grid .grid-body .time-column .time-marker span { position:absolute; left:4px; top:-8px; font-size:9px; color:#b0bcc8; background:#fafbfc; padding:0 4px; white-space:nowrap; }
+        .week-grid .grid-body .day-column { position:relative; background:white; border-right:1px solid #eef1f5; height:100%; overflow:hidden; }
+        .week-grid .grid-body .day-column:last-child { border-right:none; }
+        .week-grid .grid-body .day-column .day-grid-line { position:absolute; left:0; right:0; border-top:1px dashed #eef1f5; pointer-events:none; }
+        .week-grid .grid-body .day-column .course-block { position:absolute; left:4px; right:4px; border-radius:6px; padding:2px 6px; font-size:11px; font-weight:500; color:#1a2332; cursor:pointer; overflow:hidden; transition:.15s; box-shadow:0 1px 4px rgba(0,0,0,0.04); z-index:2; display:flex; flex-direction:column; justify-content:center; line-height:1.3; border-left:3px solid #4f7df3; background:rgba(79,125,243,0.10); }
+        .week-grid .grid-body .day-column .course-block:hover { z-index:10; box-shadow:0 4px 12px rgba(79,125,243,0.2); filter:brightness(.96); }
+        .week-grid .grid-body .day-column .course-block .course-name { font-weight:600; font-size:12px; }
+        .week-grid .grid-body .day-column .course-block .course-student { font-size:10px; color:#5a6879; }
+        .week-grid .grid-body .day-column .course-block .course-time { font-size:9px; color:#7a8a9a; }
+        .week-grid .grid-body .day-column .course-block .course-classroom { font-size:8px; color:#8a9aa8; margin-top:1px; }
+        .current-hour-highlight { position:absolute; left:60px; right:0; background:rgba(255,200,50,0.12); pointer-events:none; z-index:1; border-top:2px solid rgba(255,200,50,0.25); border-bottom:2px solid rgba(255,200,50,0.25); }
+        .current-time-line { position:absolute; left:60px; right:0; height:2px; background:#ff3b30; z-index:100; pointer-events:none; opacity:.85; }
 
-        /* 刷新时间按钮 */
-        .btn-refresh-time {
-            background: transparent;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 4px 14px;
-            font-size: 13px;
-            cursor: pointer;
-            color: #4f7df3;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-refresh-time:hover {
-            background: #eef4fe;
-            border-color: #4f7df3;
-        }
-        .btn-refresh-time:active {
-            transform: scale(0.95);
-        }
+        /* ===== 日视图弹窗 ===== */
+        .day-course-item { display:flex; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #f0f2f5; align-items:center; cursor:pointer; transition:.15s; }
+        .day-course-item:hover { background:#f5f8ff; }
+        .day-course-item .info { flex:1; }
+        .day-course-item .info .name { font-weight:600; font-size:14px; color:#1a2332; }
+        .day-course-item .info .detail { font-size:12px; color:#8a9aa8; }
+        .day-course-item .time { font-size:13px; color:#4f7df3; font-weight:500; }
+        .day-empty { text-align:center; color:#b0bcc8; padding:30px 0; font-size:16px; }
 
-        /* ===== 模态框 ===== */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(3px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            padding: 20px;
-        }
-        .modal-overlay.show {
-            display: flex;
-        }
-        .modal-box {
-            background: white;
-            border-radius: 24px;
-            max-width: 640px;
-            width: 100%;
-            padding: 28px 32px 24px 32px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
-            animation: modalIn 0.25s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.96);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        .modal-box h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1a2332;
-            margin-bottom: 4px;
-        }
-        .modal-box .sub-hint {
-            font-size: 14px;
-            color: #8a9aa8;
-            margin-bottom: 16px;
-        }
-        .modal-box label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 12px 0 4px 0;
-        }
-        .modal-box input,
-        .modal-box select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 14px;
-            transition: 0.2s;
-            background: #fafbfc;
-            outline: none;
-        }
-        .modal-box input:focus,
-        .modal-box select:focus {
-            border-color: #4f7df3;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(79, 125, 243, 0.08);
-        }
-        .modal-box .row2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .modal-box .row2 label {
-            margin-top: 8px;
-        }
-        .modal-box .remaining-info {
-            margin-top: 12px;
-            padding: 10px 14px;
-            background: #f0f4fe;
-            border-radius: 12px;
-            font-size: 14px;
-            color: #1a2332;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-box .remaining-info .label {
-            font-weight: 600;
-        }
-        .modal-box .remaining-info .value {
-            font-weight: 700;
-            color: #4f7df3;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .modal-actions button {
-            padding: 10px 28px;
-            border-radius: 14px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .modal-actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5a6879;
-        }
-        .modal-actions .btn-cancel:hover {
-            background: #e2e6ec;
-        }
-        .modal-actions .btn-confirm {
-            background: #4f7df3;
-            color: white;
-        }
-        .modal-actions .btn-confirm:hover {
-            background: #3a66d9;
-        }
-        .modal-actions .btn-secondary {
-            background: #e8edf8;
-            color: #2c3e50;
-        }
-        .modal-actions .btn-secondary:hover {
-            background: #d0ddf5;
-        }
-        .batch-area {
-            margin-top: 16px;
-            border-top: 1px solid #eef1f5;
-            padding-top: 16px;
-        }
-        .batch-area .batch-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .batch-area .batch-row input {
-            flex: 1;
-            min-width: 80px;
-            padding: 6px 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 13px;
-            background: #fafbfc;
-        }
-        .batch-area .batch-row .btn-remove-row {
-            background: #fde8e8;
-            border: none;
-            border-radius: 6px;
-            padding: 4px 10px;
-            color: #d9534f;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .batch-area .batch-row .btn-remove-row:hover {
-            background: #fcd0d0;
-        }
-        .batch-area .btn-add-batch {
-            background: #e8edf8;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #2c3e50;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .batch-area .btn-add-batch:hover {
-            background: #d0ddf5;
-        }
+        /* ===== 模态框通用 ===== */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.35); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; z-index:999; padding:20px; }
+        .modal-overlay.show { display:flex; }
+        .modal-box { background:white; border-radius:24px; max-width:640px; width:100%; padding:28px 32px 24px 32px; box-shadow:0 30px 80px rgba(0,0,0,0.2); animation:modalIn .25s ease; max-height:90vh; overflow-y:auto; }
+        @keyframes modalIn { from { opacity:0; transform:translateY(30px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .modal-box h2 { font-size:20px; font-weight:700; color:#1a2332; margin-bottom:4px; }
+        .modal-box .sub-hint { font-size:14px; color:#8a9aa8; margin-bottom:16px; }
+        .modal-box label { display:block; font-size:13px; font-weight:600; color:#2c3e50; margin:12px 0 4px 0; }
+        .modal-box input, .modal-box select { width:100%; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:14px; transition:.2s; background:#fafbfc; outline:none; }
+        .modal-box input:focus, .modal-box select:focus { border-color:#4f7df3; background:white; box-shadow:0 0 0 4px rgba(79,125,243,0.08); }
+        .modal-box .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .modal-box .row2 label { margin-top:8px; }
+        .modal-box .remaining-info { margin-top:12px; padding:10px 14px; background:#f0f4fe; border-radius:12px; font-size:14px; color:#1a2332; display:flex; justify-content:space-between; align-items:center; }
+        .modal-box .remaining-info .label { font-weight:600; }
+        .modal-box .remaining-info .value { font-weight:700; color:#4f7df3; }
+        .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; }
+        .modal-actions button { padding:10px 28px; border-radius:14px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:.2s; }
+        .modal-actions .btn-cancel { background:#f0f2f5; color:#5a6879; }
+        .modal-actions .btn-cancel:hover { background:#e2e6ec; }
+        .modal-actions .btn-confirm { background:#4f7df3; color:white; }
+        .modal-actions .btn-confirm:hover { background:#3a66d9; }
+        .modal-actions .btn-secondary { background:#e8edf8; color:#2c3e50; }
+        .modal-actions .btn-secondary:hover { background:#d0ddf5; }
 
-        /* 自定义下拉 */
-        .custom-dropdown {
-            position: relative;
-            width: 100%;
-        }
-        .custom-dropdown .dropdown-list {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 100;
-            display: none;
-        }
-        .custom-dropdown .dropdown-list.active {
-            display: block;
-        }
-        .custom-dropdown .dropdown-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 14px;
-            font-size: 14px;
-            color: #1a2332;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f2f5;
-            transition: 0.1s;
-        }
-        .custom-dropdown .dropdown-item:hover {
-            background: #f0f4fe;
-        }
-        .custom-dropdown .dropdown-item:last-child {
-            border-bottom: none;
-        }
-        .custom-dropdown .dropdown-item .item-text {
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .custom-dropdown .dropdown-item .item-delete {
-            background: transparent;
-            border: none;
-            color: #b0bcc8;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 0 4px;
-            transition: 0.2s;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-        .custom-dropdown .dropdown-item .item-delete:hover {
-            color: #e06070;
-            transform: scale(1.2);
-        }
-        .custom-dropdown .dropdown-empty {
-            padding: 12px 14px;
-            color: #b0bcc8;
-            font-size: 13px;
-            text-align: center;
-        }
+        .batch-area { margin-top:16px; border-top:1px solid #eef1f5; padding-top:16px; }
+        .batch-area .batch-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+        .batch-area .batch-row input { flex:1; min-width:80px; padding:6px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; background:#fafbfc; }
+        .batch-area .batch-row .btn-remove-row { background:#fde8e8; border:none; border-radius:6px; padding:4px 10px; color:#d9534f; cursor:pointer; font-size:13px; }
+        .batch-area .batch-row .btn-remove-row:hover { background:#fcd0d0; }
+        .batch-area .btn-add-batch { background:#e8edf8; border:none; border-radius:8px; padding:6px 16px; font-size:13px; font-weight:600; color:#2c3e50; cursor:pointer; transition:.2s; }
+        .batch-area .btn-add-batch:hover { background:#d0ddf5; }
 
-        /* 详情弹窗 */
-        .detail-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(2px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 998;
-            padding: 20px;
-        }
-        .detail-overlay.show {
-            display: flex;
-        }
-        .detail-box {
-            background: white;
-            border-radius: 20px;
-            max-width: 420px;
-            width: 100%;
-            padding: 28px 32px 24px 32px;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
-            animation: modalIn 0.2s ease;
-        }
-        .detail-box h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a2332;
-            margin-bottom: 12px;
-        }
-        .detail-box .detail-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 14px;
-        }
-        .detail-box .detail-item .label {
-            color: #8a9aa8;
-        }
-        .detail-box .detail-item .value {
-            font-weight: 500;
-            color: #1a2332;
-        }
-        .detail-box .detail-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: flex-end;
-        }
-        .detail-box .detail-actions button {
-            padding: 8px 20px;
-            border-radius: 12px;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .detail-box .detail-actions .btn-edit {
-            background: #e8edf8;
-            color: #2c3e50;
-        }
-        .detail-box .detail-actions .btn-edit:hover {
-            background: #d0ddf5;
-        }
-        .detail-box .detail-actions .btn-del {
-            background: #fde8e8;
-            color: #d9534f;
-        }
-        .detail-box .detail-actions .btn-del:hover {
-            background: #fcd0d0;
-        }
-        .detail-box .detail-actions .btn-close {
-            background: #f0f2f5;
-            color: #5a6879;
-        }
-        .detail-box .detail-actions .btn-close:hover {
-            background: #e2e6ec;
-        }
+        .custom-dropdown { position:relative; width:100%; }
+        .custom-dropdown .dropdown-list { position:absolute; top:calc(100%+4px); left:0; right:0; background:white; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); max-height:200px; overflow-y:auto; z-index:100; display:none; }
+        .custom-dropdown .dropdown-list.active { display:block; }
+        .custom-dropdown .dropdown-item { display:flex; justify-content:space-between; align-items:center; padding:8px 14px; font-size:14px; color:#1a2332; cursor:pointer; border-bottom:1px solid #f0f2f5; transition:.1s; }
+        .custom-dropdown .dropdown-item:hover { background:#f0f4fe; }
+        .custom-dropdown .dropdown-item:last-child { border-bottom:none; }
+        .custom-dropdown .dropdown-item .item-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .custom-dropdown .dropdown-item .item-delete { background:transparent; border:none; color:#b0bcc8; font-size:16px; cursor:pointer; padding:0 4px; transition:.2s; line-height:1; flex-shrink:0; }
+        .custom-dropdown .dropdown-item .item-delete:hover { color:#e06070; transform:scale(1.2); }
+        .custom-dropdown .dropdown-empty { padding:12px 14px; color:#b0bcc8; font-size:13px; text-align:center; }
 
-        /* ===== 登录模态框 ===== */
-        .auth-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        }
-        .auth-modal.show {
-            display: flex;
-        }
-        .auth-box {
-            background: white;
-            border-radius: 24px;
-            max-width: 400px;
-            width: 100%;
-            padding: 32px 28px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-            animation: modalIn 0.25s ease;
-        }
-        .auth-box h2 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #1a2332;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-        .auth-box .sub-hint {
-            text-align: center;
-            color: #8a9aa8;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        .auth-box label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 12px 0 4px 0;
-        }
-        .auth-box input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 14px;
-            transition: 0.2s;
-            background: #fafbfc;
-            outline: none;
-        }
-        .auth-box input:focus {
-            border-color: #4f7df3;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(79, 125, 243, 0.08);
-        }
-        .auth-box .actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        .auth-box .actions button {
-            padding: 10px 28px;
-            border-radius: 14px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .auth-box .actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5a6879;
-        }
-        .auth-box .actions .btn-cancel:hover {
-            background: #e2e6ec;
-        }
-        .auth-box .actions .btn-confirm {
-            background: #4f7df3;
-            color: white;
-        }
-        .auth-box .actions .btn-confirm:hover {
-            background: #3a66d9;
-        }
-        .auth-box .switch-mode {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 14px;
-            color: #8a9aa8;
-        }
-        .auth-box .switch-mode a {
-            color: #4f7df3;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .auth-box .error-msg {
-            color: #e06070;
-            font-size: 13px;
-            margin-top: 8px;
-            text-align: center;
-        }
+        .detail-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.25); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:998; padding:20px; }
+        .detail-overlay.show { display:flex; }
+        .detail-box { background:white; border-radius:20px; max-width:420px; width:100%; padding:28px 32px 24px 32px; box-shadow:0 24px 64px rgba(0,0,0,0.15); animation:modalIn .2s ease; }
+        .detail-box h3 { font-size:18px; font-weight:700; color:#1a2332; margin-bottom:12px; }
+        .detail-box .detail-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f2f5; font-size:14px; }
+        .detail-box .detail-item .label { color:#8a9aa8; }
+        .detail-box .detail-item .value { font-weight:500; color:#1a2332; }
+        .detail-box .detail-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+        .detail-box .detail-actions button { padding:8px 20px; border-radius:12px; border:none; font-size:13px; font-weight:600; cursor:pointer; transition:.2s; }
+        .detail-box .detail-actions .btn-edit { background:#e8edf8; color:#2c3e50; }
+        .detail-box .detail-actions .btn-edit:hover { background:#d0ddf5; }
+        .detail-box .detail-actions .btn-del { background:#fde8e8; color:#d9534f; }
+        .detail-box .detail-actions .btn-del:hover { background:#fcd0d0; }
+        .detail-box .detail-actions .btn-close { background:#f0f2f5; color:#5a6879; }
+        .detail-box .detail-actions .btn-close:hover { background:#e2e6ec; }
 
-        /* ===== 当日课程列表弹窗 ===== */
-        .day-list-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(3px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 997;
-            padding: 20px;
-        }
-        .day-list-overlay.show {
-            display: flex;
-        }
-        .day-list-box {
-            background: white;
-            border-radius: 24px;
-            max-width: 500px;
-            width: 100%;
-            padding: 28px 32px 24px 32px;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
-            animation: modalIn 0.2s ease;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .day-list-box h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a2332;
-            margin-bottom: 4px;
-        }
-        .day-list-box .day-list-date {
-            font-size: 14px;
-            color: #8a9aa8;
-            margin-bottom: 16px;
-        }
-        .day-list-box .day-list-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 14px;
-        }
-        .day-list-box .day-list-item .info {
-            flex: 1;
-        }
-        .day-list-box .day-list-item .info .name {
-            font-weight: 500;
-            color: #1a2332;
-        }
-        .day-list-box .day-list-item .info .meta {
-            font-size: 12px;
-            color: #8a9aa8;
-        }
-        .day-list-box .day-list-item .time {
-            font-weight: 500;
-            color: #4f7df3;
-        }
-        .day-list-box .day-list-empty {
-            text-align: center;
-            color: #b0bcc8;
-            padding: 20px 0;
-        }
-        .day-list-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .day-list-actions button {
-            padding: 8px 20px;
-            border-radius: 14px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .day-list-actions .btn-add-day {
-            background: #4f7df3;
-            color: white;
-        }
-        .day-list-actions .btn-add-day:hover {
-            background: #3a66d9;
-        }
-        .day-list-actions .btn-close-day {
-            background: #f0f2f5;
-            color: #5a6879;
-        }
-        .day-list-actions .btn-close-day:hover {
-            background: #e2e6ec;
-        }
-
-        /* ===== 响应式 ===== */
-        @media (max-width: 1024px) {
-            .month-grid-wrap {
-                flex-wrap: wrap;
-            }
-            .month-card {
-                max-width: 100%;
-                min-width: 220px;
-            }
-            .navbar {
-                padding: 10px 16px;
-            }
-            .navbar-title {
-                font-size: 17px;
-            }
-            .btn-add-nav {
-                padding: 6px 14px;
-                font-size: 13px;
-            }
-            .calendar-wrap {
-                padding: 12px 12px 16px 12px;
-            }
-            .modal-box {
-                max-width: 95%;
-                padding: 20px;
-            }
-            .batch-area .batch-row {
-                flex-wrap: wrap;
-            }
-            .batch-area .batch-row input {
-                min-width: 60px;
-                flex: 1 0 80px;
-            }
-            .zoom-controls {
-                top: 12px;
-                right: 12px;
-            }
-        }
-        @media (max-width: 700px) {
-            #app {
-                height: auto;
-                min-height: 100vh;
-                border-radius: 16px;
-            }
-            .navbar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 6px;
-            }
-            .navbar-left {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .navbar-right {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            .navbar-stats {
-                font-size: 13px;
-                padding: 4px 14px;
-            }
-            .modal-box {
-                padding: 16px;
-            }
-            .month-day-cell {
-                min-height: 54px;
-                padding: 2px 3px;
-            }
-            .month-day-cell .day-number {
-                font-size: 12px;
-            }
-            .month-day-cell .course-slot {
-                font-size: 7px;
-                padding: 0 2px;
-            }
-            .week-grid {
-                min-width: 500px;
-            }
-            .week-grid .grid-body {
-                height: 480px;
-            }
-            .week-grid .grid-body .day-column .course-block {
-                font-size: 9px;
-                padding: 1px 4px;
-            }
-            .week-grid .grid-body .day-column .course-block .course-name {
-                font-size: 10px;
-            }
-            .zoom-controls {
-                top: 8px;
-                right: 8px;
-                padding: 2px 6px;
-            }
-            .zoom-controls button {
-                font-size: 18px;
-                width: 26px;
-                height: 26px;
-            }
-            .zoom-controls .zoom-level {
-                font-size: 12px;
-                min-width: 30px;
-                line-height: 26px;
-            }
-            .month-grid-wrap.single {
-                margin-top: 50px;
-            }
-            .user-area {
-                font-size: 12px;
-            }
-            .user-area button {
-                padding: 2px 8px;
-                font-size: 11px;
-            }
-            .day-list-box {
-                max-width: 95%;
-                padding: 20px;
-            }
-            .btn-refresh-time {
-                font-size: 11px;
-                padding: 2px 10px;
-            }
-        }
-        .hidden {
-            display: none !important;
-        }
+        @media (max-width:1024px) { .month-grid-wrap { flex-wrap:wrap; } .month-card { max-width:100%; min-width:220px; } .navbar { padding:10px 16px; } .navbar-title { font-size:17px; } .btn-add-nav { padding:6px 14px; font-size:13px; } .calendar-wrap { padding:12px 12px 16px 12px; } .modal-box { max-width:95%; padding:20px; } .batch-area .batch-row { flex-wrap:wrap; } .batch-area .batch-row input { min-width:60px; flex:1 0 80px; } .zoom-controls { top:12px; right:12px; } }
+        @media (max-width:700px) { #app { height:auto; min-height:100vh; border-radius:16px; } .navbar { flex-direction:column; align-items:stretch; gap:6px; } .navbar-left { flex-wrap:wrap; justify-content:center; } .navbar-right { justify-content:center; flex-wrap:wrap; } .navbar-stats { font-size:13px; padding:4px 14px; } .modal-box { padding:16px; } .month-day-cell { min-height:54px; padding:2px 3px; } .month-day-cell .day-number { font-size:12px; } .month-day-cell .course-slot { font-size:7px; padding:0 2px; } .week-grid { min-width:500px; } .week-grid .grid-body { height:480px; } .week-grid .grid-body .day-column .course-block { font-size:9px; padding:1px 4px; } .week-grid .grid-body .day-column .course-block .course-name { font-size:10px; } .zoom-controls { top:8px; right:8px; padding:2px 6px; } .zoom-controls button { font-size:18px; width:26px; height:26px; } .zoom-controls .zoom-level { font-size:12px; min-width:30px; line-height:26px; } .month-grid-wrap.single { margin-top:50px; } }
     </style>
 </head>
 <body>
@@ -1336,10 +207,15 @@
                     📊 总课时 <span class="num" id="totalHoursCount">0</span>
                 </div>
                 <div class="nav-date-label" id="dateLabel">2026年8月</div>
-                <div class="user-area" id="userArea">
-                    <span class="user-email" id="userName"></span>
-                    <button id="btnLogin">登录</button>
-                    <button id="btnLogout" style="display:none;">注销</button>
+                <div class="data-tools">
+                    <button id="btnExport" title="导出数据（JSON）">📤 导出</button>
+                    <button id="btnImport" title="导入数据（JSON）">📥 导入</button>
+                </div>
+                <!-- 模式切换 + 用户状态 -->
+                <div class="mode-switch" id="modeSwitch">
+                    <span class="mode-label" id="modeLabel">📍 本地模式</span>
+                    <button id="btnToggleMode">切换至云端</button>
+                    <span class="user-email" id="userEmailDisplay"></span>
                 </div>
                 <button class="btn-add-nav" id="btnAddNav">＋ 添加课程</button>
             </div>
@@ -1358,9 +234,75 @@
         </div>
     </div>
 
+    <!-- ===== 添加/编辑课程模态框 ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <h2 id="modalTitle">添加课程</h2>
+            <div class="sub-hint" id="modalSubHint">填写课程信息，可批量添加多个时段</div>
+            <form id="courseForm" autocomplete="off">
+                <label>课程名称 *</label>
+                <div class="custom-dropdown" id="courseDropdown">
+                    <input type="text" id="fCourseName" placeholder="例如：数学" required />
+                    <div class="dropdown-list" id="courseDropdownList"></div>
+                </div>
+                <label>学生姓名 *</label>
+                <div class="custom-dropdown" id="studentDropdown">
+                    <input type="text" id="fStudentName" placeholder="例如：张三" required />
+                    <div class="dropdown-list" id="studentDropdownList"></div>
+                </div>
+                <label>教室（可选）</label>
+                <input type="text" id="fClassroom" placeholder="例如：A101" />
+                <label>本期总课时（小时，可选）</label>
+                <input type="number" id="fTotalHours" step="0.5" min="0" placeholder="例如：20" />
+                <div class="remaining-info">
+                    <span class="label">📌 扣除本课后剩余</span>
+                    <span class="value" id="fRemainDisplay">--</span>
+                </div>
+                <div id="singleCourseArea">
+                    <label>日期 *</label>
+                    <input type="date" id="fDate" required />
+                    <div class="row2">
+                        <div>
+                            <label>开始时间 *</label>
+                            <input type="time" id="fStartTime" step="60" required />
+                        </div>
+                        <div>
+                            <label>结束时间 *</label>
+                            <input type="time" id="fEndTime" step="60" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="batch-area" id="batchArea">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-weight:600; font-size:14px; color:#2c3e50;">📋 批量添加时段</span>
+                        <button type="button" class="btn-add-batch" id="btnAddBatchRow">＋ 添加一行</button>
+                    </div>
+                    <div id="batchRows"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="btnToggleBatch">📋 批量模式</button>
+                    <button type="button" class="btn-cancel" id="modalCancel">取消</button>
+                    <button type="submit" class="btn-confirm" id="modalConfirm">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== 日视图模态框 ===== -->
+    <div class="modal-overlay" id="dayModal">
+        <div class="modal-box">
+            <h2 id="dayModalTitle">📅 课程列表</h2>
+            <div id="dayCourseList" style="max-height:400px;overflow-y:auto;margin:16px 0;"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="dayModalAddBtn">＋ 添加课程</button>
+                <button class="btn-cancel" id="dayModalClose">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== 登录/注册模态框 ===== -->
-    <div class="auth-modal" id="authModal">
-        <div class="auth-box">
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-box">
             <h2 id="authTitle">登录</h2>
             <div class="sub-hint" id="authSubHint">使用您的邮箱和密码</div>
             <form id="authForm">
@@ -1381,65 +323,16 @@
         </div>
     </div>
 
-    <!-- ===== 添加 / 编辑 课程模态框 ===== -->
-    <div class="modal-overlay" id="modalOverlay">
+    <!-- ===== 同步选择模态框 ===== -->
+    <div class="modal-overlay" id="syncModal">
         <div class="modal-box">
-            <h2 id="modalTitle">添加课程</h2>
-            <div class="sub-hint" id="modalSubHint">填写课程信息，可批量添加多个时段</div>
-            <form id="courseForm" autocomplete="off">
-                <label>课程名称 *</label>
-                <div class="custom-dropdown" id="courseDropdown">
-                    <input type="text" id="fCourseName" placeholder="例如：数学" required />
-                    <div class="dropdown-list" id="courseDropdownList"></div>
-                </div>
-
-                <label>学生姓名 *</label>
-                <div class="custom-dropdown" id="studentDropdown">
-                    <input type="text" id="fStudentName" placeholder="例如：张三" required />
-                    <div class="dropdown-list" id="studentDropdownList"></div>
-                </div>
-
-                <label>教室（可选）</label>
-                <input type="text" id="fClassroom" placeholder="例如：A101" />
-
-                <label>本期总课时（小时，可选）</label>
-                <input type="number" id="fTotalHours" step="0.5" min="0" placeholder="例如：20" />
-
-                <div class="remaining-info" id="remainInfo">
-                    <span class="label">📌 扣除本课后剩余</span>
-                    <span class="value" id="fRemainDisplay">--</span>
-                </div>
-
-                <div id="singleCourseArea">
-                    <label>日期 *</label>
-                    <input type="date" id="fDate" required />
-
-                    <div class="row2">
-                        <div>
-                            <label>开始时间 *</label>
-                            <input type="time" id="fStartTime" step="60" required />
-                        </div>
-                        <div>
-                            <label>结束时间 *</label>
-                            <input type="time" id="fEndTime" step="60" required />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="batch-area" id="batchArea">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-weight:600; font-size:14px; color:#2c3e50;">📋 批量添加时段</span>
-                        <button type="button" class="btn-add-batch" id="btnAddBatchRow">＋ 添加一行</button>
-                    </div>
-                    <div id="batchRows"></div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" id="btnToggleBatch">📋 批量模式</button>
-                    <button type="button" class="btn-cancel" id="modalCancel">取消</button>
-                    <button type="submit" class="btn-confirm" id="modalConfirm">保存</button>
-                </div>
-            </form>
+            <h2>📌 数据同步</h2>
+            <p style="margin:16px 0;color:#5a6879;font-size:14px;">本地和云端都有数据，请选择同步方式：</p>
+            <div class="modal-actions" style="justify-content:center;">
+                <button class="btn-confirm" id="syncCloudToLocal">☁️ 云端覆盖本地</button>
+                <button class="btn-secondary" id="syncLocalToCloud">📁 本地覆盖云端</button>
+                <button class="btn-cancel" id="syncCancel">取消</button>
+            </div>
         </div>
     </div>
 
@@ -1463,22 +356,9 @@
         </div>
     </div>
 
-    <!-- ===== 当日课程列表弹窗 ===== -->
-    <div class="day-list-overlay" id="dayListOverlay">
-        <div class="day-list-box">
-            <h3>📅 课程列表</h3>
-            <div class="day-list-date" id="dayListDate">--</div>
-            <div id="dayListContent"></div>
-            <div class="day-list-actions">
-                <button class="btn-close-day" id="dayListClose">关闭</button>
-                <button class="btn-add-day" id="dayListAdd">＋ 添加课程</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // ============================================================
-        //  1. Firebase 配置（请替换为您自己的项目配置）
+        //  1. Firebase 配置（请替换为您的实际配置）
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD5Zt_QYjqrYjOlqWinNYltJ37Lc8kD-4I",
@@ -1492,17 +372,16 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+
+        // 持久化登录状态
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         // ============================================================
-        //  2. 数据 & 状态
+        //  2. 全局状态
         // ============================================================
         let courses = [];
         let nextId = 1;
         let students = {};
-        let currentUser = null;
-        let userDocRef = null;
-
         const state = {
             viewMode: 'month',
             subMode: 'single',
@@ -1511,8 +390,13 @@
             editingId: null,
             batchMode: false,
             scaleFactor: 1.0,
+            mode: 'local', // 'local' 或 'cloud'
+            user: null, // Firebase user object
+            userDocRef: null,
         };
+        const STORAGE_KEY = 'courseTableData';
 
+        // DOM 元素
         const $ = (s) => document.querySelector(s);
         const $$ = (s) => document.querySelectorAll(s);
 
@@ -1527,23 +411,12 @@
         const zoomLevel = $('#zoomLevel');
         const zoomIn = $('#zoomIn');
         const zoomOut = $('#zoomOut');
+        const btnExport = $('#btnExport');
+        const btnImport = $('#btnImport');
 
-        // 用户相关
-        const btnLogin = $('#btnLogin');
-        const btnLogout = $('#btnLogout');
-        const userNameSpan = $('#userName');
-        const authModal = $('#authModal');
-        const authForm = $('#authForm');
-        const authEmail = $('#authEmail');
-        const authPassword = $('#authPassword');
-        const authSubmit = $('#authSubmit');
-        const authCancel = $('#authCancel');
-        const authError = $('#authError');
-        const authTitle = $('#authTitle');
-        const authSubHint = $('#authSubHint');
-        const switchMode = $('#switchMode');
-        const switchText = $('#switchText');
-        let isLoginMode = true;
+        const modeLabel = $('#modeLabel');
+        const btnToggleMode = $('#btnToggleMode');
+        const userEmailDisplay = $('#userEmailDisplay');
 
         // 课程模态框
         const elModal = $('#modalOverlay');
@@ -1571,6 +444,34 @@
         const courseDropdownList = $('#courseDropdownList');
         const studentDropdownList = $('#studentDropdownList');
 
+        const dayModal = $('#dayModal');
+        const dayModalTitle = $('#dayModalTitle');
+        const dayCourseList = $('#dayCourseList');
+        const dayModalAddBtn = $('#dayModalAddBtn');
+        const dayModalClose = $('#dayModalClose');
+        let dayModalDate = '';
+
+        // 认证模态框
+        const authModal = $('#authModal');
+        const authTitle = $('#authTitle');
+        const authSubHint = $('#authSubHint');
+        const authForm = $('#authForm');
+        const authEmail = $('#authEmail');
+        const authPassword = $('#authPassword');
+        const authSubmit = $('#authSubmit');
+        const authCancel = $('#authCancel');
+        const authError = $('#authError');
+        const switchMode = $('#switchMode');
+        const switchText = $('#switchText');
+        let isLoginMode = true;
+
+        // 同步模态框
+        const syncModal = $('#syncModal');
+        const syncCloudToLocal = $('#syncCloudToLocal');
+        const syncLocalToCloud = $('#syncLocalToCloud');
+        const syncCancel = $('#syncCancel');
+        let syncResolve = null; // 用于 Promise
+
         const elDetail = $('#detailOverlay');
         const dCourseName = $('#dCourseName');
         const dStudentName = $('#dStudentName');
@@ -1581,14 +482,6 @@
         const elDetailClose = $('#detailClose');
         const elDetailEdit = $('#detailEdit');
         const elDetailDelete = $('#detailDelete');
-
-        // 当日课程列表弹窗
-        const dayListOverlay = $('#dayListOverlay');
-        const dayListDate = $('#dayListDate');
-        const dayListContent = $('#dayListContent');
-        const dayListClose = $('#dayListClose');
-        const dayListAdd = $('#dayListAdd');
-        let dayListTargetDate = '';
 
         // ============================================================
         //  3. 工具函数
@@ -1710,12 +603,33 @@
         }
 
         // ============================================================
-        //  4. 数据读写（Firestore）
+        //  4. 数据持久化（本地 + 云端）
         // ============================================================
-        async function loadDataFromFirestore() {
-            if (!currentUser) return false;
+        // ---- 本地存储 ----
+        function saveLocalData() {
             try {
-                const doc = await userDocRef.get();
+                const data = { courses, students, nextId };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) { console.warn('保存本地数据失败:', e); }
+        }
+
+        function loadLocalData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                courses = data.courses || [];
+                students = data.students || {};
+                nextId = data.nextId || 1;
+                return true;
+            } catch (e) { console.warn('读取本地数据失败:', e); return false; }
+        }
+
+        // ---- 云端存储 ----
+        async function loadCloudData() {
+            if (!state.user) return false;
+            try {
+                const doc = await state.userDocRef.get();
                 if (doc.exists) {
                     const data = doc.data();
                     courses = data.courses || [];
@@ -1723,58 +637,354 @@
                     nextId = data.nextId || 1;
                     return true;
                 } else {
-                    await userDocRef.set({ courses: [], students: {}, nextId: 1 });
+                    // 首次使用，创建空文档
+                    await state.userDocRef.set({ courses: [], students: {}, nextId: 1 });
                     courses = [];
                     students = {};
                     nextId = 1;
                     return true;
                 }
             } catch (e) {
-                console.warn('读取数据失败:', e);
+                console.warn('读取云端数据失败:', e);
                 return false;
             }
         }
 
-        async function saveDataToFirestore() {
-            if (!currentUser) return;
+        async function saveCloudData() {
+            if (!state.user) return;
             try {
-                await userDocRef.set({
+                await state.userDocRef.set({
                     courses: courses,
                     students: students,
                     nextId: nextId,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch (e) {
-                console.warn('保存数据失败:', e);
+                console.warn('保存云端数据失败:', e);
             }
         }
 
-        function autoSave() {
-            saveDataToFirestore();
+        // ---- 统一保存 ----
+        async function saveData() {
+            if (state.mode === 'local') {
+                saveLocalData();
+            } else {
+                await saveCloudData();
+            }
         }
 
-        function listenForChanges() {
-            if (!currentUser) return;
-            userDocRef.onSnapshot(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    const newCourses = data.courses || [];
-                    const newStudents = data.students || {};
-                    const newNextId = data.nextId || 1;
-                    if (JSON.stringify(courses) !== JSON.stringify(newCourses) ||
-                        JSON.stringify(students) !== JSON.stringify(newStudents) ||
-                        nextId !== newNextId) {
-                        courses = newCourses;
-                        students = newStudents;
-                        nextId = newNextId;
-                        render();
-                    }
-                }
-            });
+        // ---- 统一加载 ----
+        async function loadData() {
+            if (state.mode === 'local') {
+                return loadLocalData();
+            } else {
+                return await loadCloudData();
+            }
         }
 
         // ============================================================
-        //  5. 自定义下拉
+        //  5. 模式切换与同步
+        // ============================================================
+        // 切换模式（仅界面切换，不触发数据迁移）
+        function setMode(mode) {
+            state.mode = mode;
+            updateModeUI();
+            render();
+        }
+
+        function updateModeUI() {
+            if (state.mode === 'local') {
+                modeLabel.textContent = '📍 本地模式';
+                btnToggleMode.textContent = '切换至云端';
+                userEmailDisplay.textContent = '';
+                btnToggleMode.style.display = 'inline-block';
+            } else {
+                modeLabel.textContent = '☁️ 云端模式';
+                if (state.user) {
+                    userEmailDisplay.textContent = state.user.email;
+                    btnToggleMode.textContent = '退出登录';
+                } else {
+                    userEmailDisplay.textContent = '(未登录)';
+                    btnToggleMode.textContent = '登录';
+                }
+            }
+        }
+
+        // 执行同步：弹出选择框
+        function showSyncDialog() {
+            return new Promise((resolve) => {
+                syncModal.classList.add('show');
+                syncResolve = resolve;
+            });
+        }
+
+        // 同步回调
+        syncCloudToLocal.addEventListener('click', () => {
+            syncModal.classList.remove('show');
+            if (syncResolve) syncResolve('cloudToLocal');
+        });
+        syncLocalToCloud.addEventListener('click', () => {
+            syncModal.classList.remove('show');
+            if (syncResolve) syncResolve('localToCloud');
+        });
+        syncCancel.addEventListener('click', () => {
+            syncModal.classList.remove('show');
+            if (syncResolve) syncResolve('cancel');
+        });
+        syncModal.addEventListener('click', (e) => {
+            if (e.target === syncModal) {
+                syncModal.classList.remove('show');
+                if (syncResolve) syncResolve('cancel');
+            }
+        });
+
+        // 切换模式主逻辑（处理登录/登出/同步）
+        async function toggleMode() {
+            if (state.mode === 'local') {
+                // 切换到云端：检查登录状态，未登录则弹窗登录
+                if (!state.user) {
+                    // 打开登录框
+                    openAuthModal();
+                    // 等待登录完成（在 auth state 监听中处理）
+                    return; // 登录完成后会由 onAuthStateChanged 继续
+                } else {
+                    // 已登录，直接切换模式
+                    // 但需要先同步数据（如果本地有数据且云端有数据）
+                    await performSyncAndSwitch();
+                }
+            } else {
+                // 云端 -> 本地：退出登录（但保留云端数据）
+                if (state.user) {
+                    await auth.signOut();
+                    // 登出后，自动回到本地模式
+                    // 但数据会保留在本地（之前已经保存过）
+                } else {
+                    // 异常情况，直接切回本地
+                    setMode('local');
+                }
+            }
+        }
+
+        async function performSyncAndSwitch() {
+            // 1. 读取当前本地数据（如果本地有数据）
+            const hasLocal = loadLocalData(); // 加载到 courses 等变量
+            const localCourses = [...courses];
+            const localStudents = { ...students };
+            const localNextId = nextId;
+
+            // 2. 读取云端数据
+            await loadCloudData();
+            const cloudCourses = [...courses];
+            const cloudStudents = { ...students };
+            const cloudNextId = nextId;
+
+            // 3. 判断两者是否有数据
+            const hasLocalData = localCourses.length > 0;
+            const hasCloudData = cloudCourses.length > 0;
+
+            if (hasLocalData && hasCloudData) {
+                // 两者都有数据，弹出选择框
+                const choice = await showSyncDialog();
+                if (choice === 'cloudToLocal') {
+                    // 云端覆盖本地：使用云端数据
+                    courses = cloudCourses;
+                    students = cloudStudents;
+                    nextId = cloudNextId;
+                } else if (choice === 'localToCloud') {
+                    // 本地覆盖云端：使用本地数据
+                    courses = localCourses;
+                    students = localStudents;
+                    nextId = localNextId;
+                    await saveCloudData(); // 立即保存到云端
+                } else {
+                    // 取消：保持当前（不切换模式）
+                    // 但用户点击取消后，我们仍停留在本地模式
+                    setMode('local');
+                    return;
+                }
+            } else if (hasLocalData && !hasCloudData) {
+                // 仅有本地数据：上传到云端
+                courses = localCourses;
+                students = localStudents;
+                nextId = localNextId;
+                await saveCloudData();
+            } else if (!hasLocalData && hasCloudData) {
+                // 仅有云端数据：下载到本地
+                courses = cloudCourses;
+                students = cloudStudents;
+                nextId = cloudNextId;
+            } else {
+                // 都为空：保持空
+            }
+
+            // 保存到当前模式存储（如果是云端，已经存了；如果是本地，则存本地）
+            if (state.mode === 'local') {
+                // 但我们即将切换到云端，所以先保存本地再切换
+                saveLocalData();
+            }
+
+            // 切换模式
+            setMode('cloud');
+            // 渲染
+            render();
+        }
+
+        // ============================================================
+        //  6. 认证逻辑
+        // ============================================================
+        auth.onAuthStateChanged(async (user) => {
+            state.user = user;
+            if (user) {
+                state.userDocRef = db.collection('users').doc(user.uid);
+                userEmailDisplay.textContent = user.email;
+                // 如果当前是本地模式，且用户点击了“切换至云端”，则进入同步流程
+                if (state.mode === 'local') {
+                    // 但我们需要等用户点击按钮才执行，所以这里不做自动切换
+                    // 只是更新UI
+                    updateModeUI();
+                } else {
+                    // 已经处于云端模式，重新加载数据
+                    await loadCloudData();
+                    render();
+                }
+            } else {
+                state.userDocRef = null;
+                userEmailDisplay.textContent = '';
+                // 如果当前是云端模式但用户未登录，自动切回本地
+                if (state.mode === 'cloud') {
+                    setMode('local');
+                }
+            }
+            updateModeUI();
+        });
+
+        // 登录/注册模态框
+        function openAuthModal() {
+            isLoginMode = true;
+            authTitle.textContent = '登录';
+            authSubHint.textContent = '使用您的邮箱和密码';
+            authSubmit.textContent = '登录';
+            switchText.textContent = '还没有账号？';
+            switchMode.textContent = '注册';
+            authError.textContent = '';
+            authEmail.value = '';
+            authPassword.value = '';
+            authModal.classList.add('show');
+        }
+
+        authCancel.addEventListener('click', () => { authModal.classList.remove('show'); });
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) authModal.classList.remove('show');
+        });
+
+        switchMode.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authTitle.textContent = isLoginMode ? '登录' : '注册';
+            authSubHint.textContent = isLoginMode ? '使用您的邮箱和密码' : '创建新账号';
+            authSubmit.textContent = isLoginMode ? '登录' : '注册';
+            switchText.textContent = isLoginMode ? '还没有账号？' : '已有账号？';
+            switchMode.textContent = isLoginMode ? '注册' : '登录';
+            authError.textContent = '';
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = authEmail.value.trim();
+            const password = authPassword.value.trim();
+            if (!email || !password) {
+                authError.textContent = '请填写邮箱和密码';
+                return;
+            }
+            if (password.length < 6) {
+                authError.textContent = '密码至少6位';
+                return;
+            }
+            authError.textContent = '';
+            try {
+                if (isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                }
+                authModal.classList.remove('show');
+                // 登录成功后，如果当前是本地模式，且用户点击了“切换至云端”，则会触发按钮逻辑
+                // 我们在这里判断：如果当前在本地模式，则自动执行切换（因为用户刚登录，意图是切换到云端）
+                if (state.mode === 'local') {
+                    await performSyncAndSwitch();
+                }
+            } catch (err) {
+                authError.textContent = err.message;
+            }
+        });
+
+        // 切换按钮点击事件
+        btnToggleMode.addEventListener('click', async () => {
+            if (state.mode === 'local') {
+                // 切换到云端
+                if (!state.user) {
+                    // 未登录，先登录
+                    openAuthModal();
+                    // 登录成功后会自动触发 performSyncAndSwitch
+                } else {
+                    // 已登录，直接同步切换
+                    await performSyncAndSwitch();
+                }
+            } else {
+                // 云端 -> 本地：退出登录
+                if (state.user) {
+                    await auth.signOut();
+                    // 登出后，模式会自动变为本地（在 onAuthStateChanged 中处理）
+                } else {
+                    setMode('local');
+                }
+            }
+        });
+
+        // ============================================================
+        //  7. 导入导出
+        // ============================================================
+        function exportData() {
+            const data = { courses, students, nextId, exportDate: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `课程表数据_${formatDate(new Date())}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (!data.courses || !data.students || data.nextId === undefined) {
+                            alert('无效的数据文件');
+                            return;
+                        }
+                        if (!confirm('导入将覆盖当前所有数据，确认继续吗？')) return;
+                        courses = data.courses;
+                        students = data.students;
+                        nextId = data.nextId || 1;
+                        saveData();
+                        render();
+                        alert('数据导入成功！');
+                    } catch (err) { alert('读取文件失败: ' + err.message); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // ============================================================
+        //  8. 下拉提示
         // ============================================================
         function buildDropdownList(inputEl, listEl, dataArray, type) {
             const val = inputEl.value.trim().toLowerCase();
@@ -1799,22 +1009,18 @@
                     delBtn.addEventListener('mousedown', (e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        if (confirm(`确定要删除所有 "${item}" 的课程记录吗？此操作不可撤销。`)) {
+                        if (confirm(`确定要删除所有 "${item}" 的课程记录吗？`)) {
                             if (type === 'course') {
                                 courses = courses.filter(c => c.courseName !== item);
                             } else {
                                 courses = courses.filter(c => c.studentName !== item);
                                 delete students[item];
                             }
-                            autoSave();
+                            saveData();
                             closeModal();
                             render();
                             openAddModal(fDate.value);
-                            if (type === 'course') {
-                                fCourseName.value = item;
-                            } else {
-                                fStudentName.value = item;
-                            }
+                            if (type === 'course') { fCourseName.value = item; } else { fStudentName.value = item; }
                             alert(`已删除所有 "${item}" 的课程记录。`);
                         }
                     });
@@ -1842,50 +1048,42 @@
                 buildDropdownList(inputEl, listEl, data, type);
             });
             inputEl.addEventListener('blur', function() {
-                setTimeout(() => {
-                    listEl.classList.remove('active');
-                }, 200);
+                setTimeout(() => { listEl.classList.remove('active'); }, 200);
             });
             document.addEventListener('click', function(e) {
                 if (!inputEl.contains(e.target) && !listEl.contains(e.target)) {
                     listEl.classList.remove('active');
                 }
             });
-            listEl.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-            });
+            listEl.addEventListener('mousedown', (e) => { e.preventDefault(); });
         }
 
         // ============================================================
-        //  6. 渲染核心
+        //  9. 渲染核心
         // ============================================================
         function render() {
-            if (!currentUser) {
-                elWrap.innerHTML =
-                    `<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;color:#8a9aa8;flex-direction:column;gap:16px;">
-                        <div>👋 请先登录以查看您的课程表</div>
-                        <div style="font-size:14px;color:#b0bcc8;">点击右上角「登录」按钮</div>
-                    </div>`;
+            if (state.mode === 'local' || state.user) {
+                // 正常渲染
+                if (state.viewMode === 'month') {
+                    renderMonthView();
+                } else {
+                    renderWeekView();
+                }
+                updateStatsAndLabel();
+                if (state.viewMode === 'month' && state.subMode === 'single') {
+                    zoomControls.classList.add('visible');
+                    zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
+                    applyZoom();
+                } else {
+                    zoomControls.classList.remove('visible');
+                    resetZoom();
+                }
+            } else {
+                // 云端模式但未登录（不应该发生）
+                elWrap.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;color:#8a9aa8;">请先登录</div>`;
                 zoomControls.classList.remove('visible');
                 elStats.textContent = '0';
                 elDateLabel.textContent = '未登录';
-                return;
-            }
-
-            if (state.viewMode === 'month') {
-                renderMonthView();
-            } else {
-                renderWeekView();
-            }
-            updateStatsAndLabel();
-
-            if (state.viewMode === 'month' && state.subMode === 'single') {
-                zoomControls.classList.add('visible');
-                zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
-                applyZoom();
-            } else {
-                zoomControls.classList.remove('visible');
-                resetZoom();
             }
         }
 
@@ -1903,15 +1101,13 @@
             }
         }
 
-        // ---------- 月视图 ----------
+        // ----- 月视图 -----
         function renderMonthView() {
             const year = state.currentDate.getFullYear();
             const month = state.currentDate.getMonth();
-
             let html = '<div class="month-grid-wrap';
             if (state.subMode === 'single') html += ' single';
             html += '">';
-
             if (state.subMode === 'single') {
                 html += renderMonthCard(year, month, true);
             } else {
@@ -1926,22 +1122,19 @@
             html += '</div>';
             elWrap.innerHTML = html;
 
-            // 绑定事件：单击日期格子 -> 显示当日课程列表
             elWrap.querySelectorAll('.month-day-cell').forEach(el => {
                 const ds = el.dataset.date;
                 if (!ds) return;
-                if (el.classList.contains('other-month')) {
-                    el.addEventListener('click', () => {
+                el.addEventListener('click', (e) => {
+                    if (e.target.closest('.course-slot')) return;
+                    if (el.classList.contains('other-month')) {
                         const d = parseDate(ds);
                         state.currentDate = d;
                         render();
-                    });
-                } else {
-                    el.addEventListener('click', (e) => {
-                        if (e.target.closest('.course-slot')) return;
-                        showDayCourses(ds);
-                    });
-                }
+                        return;
+                    }
+                    openDayView(ds);
+                });
                 el.querySelectorAll('.course-slot').forEach(slot => {
                     slot.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -1958,19 +1151,13 @@
             const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
             const totalSlots = 42;
             const todayStr = formatDate(new Date());
-
             let html = `<div class="month-card">
                 <div class="month-card-header">${year}年${month+1}月 ${isCurrent ? '⭐' : ''}</div>
                 <div class="month-weekday-row">
                     <div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div>
                 </div>
                 <div class="month-days-grid">`;
-
             const prevMonthDays = getMonthDays(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
-            const dayStart = 8 * 60;
-            const dayEnd = 22 * 60;
-            const totalDayMinutes = dayEnd - dayStart;
-
             for (let i = 0; i < totalSlots; i++) {
                 let displayDay, displayMonth, displayYear, isOther = false;
                 if (i < startOffset) {
@@ -1998,16 +1185,16 @@
                 const dateStr = formatDate(dateObj);
                 const isToday = dateStr === todayStr;
                 const dayCourses = getCoursesForDate(dateStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
-
                 const cls = `month-day-cell${isOther ? ' other-month' : ''}${isToday ? ' today' : ''}`;
                 html += `<div class="${cls}" data-date="${dateStr}">
                             <div class="day-number">${displayDay}</div>
                             <div class="course-slots">`;
-
+                const dayStart = 8 * 60;
+                const dayEnd = 22 * 60;
+                const totalDayMinutes = dayEnd - dayStart;
                 const maxShow = 6;
                 const showCourses = dayCourses.slice(0, maxShow);
                 const remaining = dayCourses.length - maxShow;
-
                 for (const c of showCourses) {
                     const [sh, sm] = c.startTime.split(':').map(Number);
                     const [eh, em] = c.endTime.split(':').map(Number);
@@ -2020,8 +1207,9 @@
                     const heightPct = ((clampedEnd - clampedStart) / totalDayMinutes) * 100;
                     const color = getStudentColor(c.studentName);
                     const border = getBorderColor(c.studentName);
+                    const finalHeight = Math.max(heightPct, 2);
                     html += `<div class="course-slot" data-course-id="${c.id}" 
-                                style="background:${color};border-left-color:${border};top:${topPct}%;height:${Math.max(heightPct, 4)}%;">
+                                style="background:${color};border-left-color:${border};width:100%;height:${finalHeight}%;margin-top:${topPct}%;position:relative;margin-bottom:1px;">
                                 ${c.startTime} - ${c.endTime}
                             </div>`;
                 }
@@ -2034,23 +1222,55 @@
             return html;
         }
 
-        // ---------- 周视图 ----------
+        // ----- 日视图 -----
+        function openDayView(dateStr) {
+            dayModalDate = dateStr;
+            const d = parseDate(dateStr);
+            dayModalTitle.textContent = `📅 ${formatDateDisplay(d)} 课程`;
+            const dayCourses = getCoursesForDate(dateStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
+            if (dayCourses.length === 0) {
+                dayCourseList.innerHTML = `<div class="day-empty">📭 今天没有课程</div>`;
+            } else {
+                let html = '';
+                for (const c of dayCourses) {
+                    const color = getStudentColor(c.studentName);
+                    html += `<div class="day-course-item" data-id="${c.id}">
+                                <div class="info">
+                                    <div class="name" style="color:${color}">${c.courseName}</div>
+                                    <div class="detail">${c.studentName}${c.classroom ? ' · ' + c.classroom : ''}</div>
+                                </div>
+                                <div class="time">${c.startTime} - ${c.endTime}</div>
+                            </div>`;
+                }
+                dayCourseList.innerHTML = html;
+                dayCourseList.querySelectorAll('.day-course-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const id = parseInt(el.dataset.id);
+                        if (!isNaN(id)) {
+                            closeDayView();
+                            openDetailModal(id);
+                        }
+                    });
+                });
+            }
+            dayModal.classList.add('show');
+        }
+
+        function closeDayView() {
+            dayModal.classList.remove('show');
+        }
+
+        // ----- 周视图 -----
         function renderWeekView() {
             const baseDate = state.currentDate;
             const thisWeekStart = getWeekStart(baseDate);
             const nextWeekStart = new Date(thisWeekStart);
             nextWeekStart.setDate(nextWeekStart.getDate() + 7);
-
             let html = `<div class="week-dual-wrap">`;
             html += renderSingleWeekGrid(thisWeekStart, '本周', true);
             html += renderSingleWeekGrid(nextWeekStart, '下周', false);
             html += `</div>`;
             elWrap.innerHTML = html;
-
-            // 绑定刷新按钮
-            elWrap.querySelectorAll('.btn-refresh-time').forEach(btn => {
-                btn.addEventListener('click', updateCurrentTimeLines);
-            });
 
             elWrap.querySelectorAll('.week-nav-float').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -2085,8 +1305,7 @@
                 });
             });
 
-            // 延迟一小段时间以确保DOM渲染完成，然后显示时间线
-            setTimeout(updateCurrentTimeLines, 50);
+            updateWeekHighlights();
         }
 
         function renderSingleWeekGrid(weekStart, label, showNav) {
@@ -2095,12 +1314,12 @@
             const todayStr = formatDate(new Date());
             const startDateStr = formatDate(start);
             const labelStr = `${start.getFullYear()}年${start.getMonth()+1}月${start.getDate()}日 - ${end.getMonth()+1}月${end.getDate()}日`;
-
             const gridHeight = 680;
             const startHour = 8,
                 endHour = 22;
-            const extraTop = 30;
-            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop;
+            const extraTop = 30,
+                extraBottom = 30;
+            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop + extraBottom;
 
             let headerCells = '';
             const dayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -2128,16 +1347,14 @@
             for (let i = 0; i < 7; i++) {
                 const dateObj = dayDates[i];
                 const dateStr = formatDate(dateObj);
-                const isTodayCol = dateStr === todayStr;
                 const dayCourses = getCoursesForDate(dateStr);
-
+                const isToday = dateStr === todayStr;
                 let gridLines = '';
                 for (let h = startHour; h <= endHour; h++) {
                     const minutesFromTop = (h - startHour) * 60 + extraTop;
                     const pct = (minutesFromTop / totalHeightMinutes) * 100;
                     gridLines += `<div class="day-grid-line" style="top:${pct}%;"></div>`;
                 }
-
                 let courseBlocks = '';
                 for (const c of dayCourses) {
                     const [sh, sm] = c.startTime.split(':').map(Number);
@@ -2160,8 +1377,7 @@
                                     ${classroomHtml}
                                 </div>`;
                 }
-
-                dayColumns += `<div class="day-column${isTodayCol ? ' today' : ''}">
+                dayColumns += `<div class="day-column" style="${isToday ? 'background:#f8faff;' : ''}">
                                     ${gridLines}
                                     ${courseBlocks}
                                 </div>`;
@@ -2173,22 +1389,19 @@
                         <span class="week-label">${label} (${labelStr})</span>
                         <div class="week-nav">
                             ${showNav ? `<button class="week-nav-float" data-delta="-1">◀</button><button class="week-nav-float" data-delta="1">▶</button>` : `<span style="color:#8a9aa8;font-size:14px;">下周</span>`}
-                            <button class="btn-refresh-time">🔄 刷新时间</button>
                         </div>
                     </div>
                     <div class="week-grid-container">
-                        <div class="week-grid" data-week-start="${startDateStr}">
+                        <div class="week-grid" data-week-start="${startDateStr}" id="weekGrid_${startDateStr}">
                             <div class="grid-header">
                                 <div class="header-cell" style="background:#fafbfc;border-right:1px solid #eef1f5;"></div>
                                 ${headerCells}
                             </div>
-                            <div class="grid-body" style="height:${gridHeight}px;">
-                                <div class="time-column" style="height:${gridHeight}px;">
+                            <div class="grid-body" style="height:${gridHeight}px;position:relative;">
+                                <div class="time-column" style="height:${gridHeight}px;position:relative;grid-column:1;">
                                     ${timeMarkers}
                                 </div>
                                 ${dayColumns}
-                                <!-- 当前时间线 -->
-                                <div class="current-time-line" style="display:none;"></div>
                             </div>
                         </div>
                     </div>
@@ -2197,34 +1410,53 @@
             return html;
         }
 
-        // 更新时间线位置（可手动调用）
-        function updateCurrentTimeLines() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            // 只在 8:00-22:00 之间显示
-            if (hour < 8 || hour > 22) {
-                document.querySelectorAll('.current-time-line').forEach(el => el.style.display = 'none');
-                return;
-            }
-            const totalMinutes = (hour - 8) * 60 + minute;
-            const startHour = 8,
-                endHour = 22;
-            const extraTop = 30;
-            const totalHeightMinutes = (endHour - startHour) * 60 + extraTop;
-            const pct = (totalMinutes / totalHeightMinutes) * 100;
+        let highlightInterval = null;
 
-            document.querySelectorAll('.current-time-line').forEach(el => {
-                el.style.display = 'block';
-                el.style.top = pct + '%';
-            });
+        function updateWeekHighlights() {
+            if (highlightInterval) {
+                clearInterval(highlightInterval);
+                highlightInterval = null;
+            }
+            const update = () => {
+                const now = new Date();
+                const hours = now.getHours();
+                const minutes = now.getMinutes();
+                const startHour = 8,
+                    endHour = 22;
+                const extraTop = 30,
+                    extraBottom = 30;
+                const totalHeightMinutes = (endHour - startHour) * 60 + extraTop + extraBottom;
+
+                if (hours >= startHour && hours < endHour) {
+                    const hourMinutes = (hours - startHour) * 60 + extraTop;
+                    const totalPct = (hourMinutes / totalHeightMinutes) * 100;
+                    const minuteOffset = (minutes / totalHeightMinutes) * 100;
+
+                    document.querySelectorAll('.current-hour-highlight, .current-time-line').forEach(el => el.remove());
+                    document.querySelectorAll('.week-grid .grid-body').forEach(body => {
+                        const hourDiv = document.createElement('div');
+                        hourDiv.className = 'current-hour-highlight';
+                        hourDiv.style.top = totalPct + '%';
+                        hourDiv.style.height = (60 / totalHeightMinutes * 100) + '%';
+                        body.appendChild(hourDiv);
+
+                        const lineDiv = document.createElement('div');
+                        lineDiv.className = 'current-time-line';
+                        lineDiv.style.top = (totalPct + minuteOffset) + '%';
+                        body.appendChild(lineDiv);
+                    });
+                } else {
+                    document.querySelectorAll('.current-hour-highlight, .current-time-line').forEach(el => el.remove());
+                }
+            };
+            update();
+            highlightInterval = setInterval(update, 10000);
         }
 
         // ---------- 统计 ----------
         function updateStatsAndLabel() {
             const year = state.currentDate.getFullYear();
             const month = state.currentDate.getMonth();
-
             if (state.viewMode === 'month') {
                 let total = 0;
                 if (state.subMode === 'single') {
@@ -2258,91 +1490,7 @@
         }
 
         // ============================================================
-        //  7. 认证逻辑
-        // ============================================================
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                currentUser = user;
-                userDocRef = db.collection('users').doc(user.uid);
-                userNameSpan.textContent = user.email || '用户';
-                btnLogin.style.display = 'none';
-                btnLogout.style.display = 'inline-block';
-                await loadDataFromFirestore();
-                listenForChanges();
-                render();
-            } else {
-                currentUser = null;
-                userDocRef = null;
-                userNameSpan.textContent = '';
-                btnLogin.style.display = 'inline-block';
-                btnLogout.style.display = 'none';
-                courses = [];
-                students = {};
-                render();
-            }
-        });
-
-        btnLogin.addEventListener('click', () => {
-            isLoginMode = true;
-            authTitle.textContent = '登录';
-            authSubHint.textContent = '使用您的邮箱和密码';
-            authSubmit.textContent = '登录';
-            switchText.textContent = '还没有账号？';
-            switchMode.textContent = '注册';
-            authError.textContent = '';
-            authEmail.value = '';
-            authPassword.value = '';
-            authModal.classList.add('show');
-        });
-
-        btnLogout.addEventListener('click', () => {
-            auth.signOut();
-        });
-
-        switchMode.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            authTitle.textContent = isLoginMode ? '登录' : '注册';
-            authSubHint.textContent = isLoginMode ? '使用您的邮箱和密码' : '创建新账号';
-            authSubmit.textContent = isLoginMode ? '登录' : '注册';
-            switchText.textContent = isLoginMode ? '还没有账号？' : '已有账号？';
-            switchMode.textContent = isLoginMode ? '注册' : '登录';
-            authError.textContent = '';
-        });
-
-        authCancel.addEventListener('click', () => {
-            authModal.classList.remove('show');
-        });
-        authModal.addEventListener('click', (e) => {
-            if (e.target === authModal) authModal.classList.remove('show');
-        });
-
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = authEmail.value.trim();
-            const password = authPassword.value.trim();
-            if (!email || !password) {
-                authError.textContent = '请填写邮箱和密码';
-                return;
-            }
-            if (password.length < 6) {
-                authError.textContent = '密码至少6位';
-                return;
-            }
-            authError.textContent = '';
-            try {
-                if (isLoginMode) {
-                    await auth.signInWithEmailAndPassword(email, password);
-                } else {
-                    await auth.createUserWithEmailAndPassword(email, password);
-                }
-                authModal.classList.remove('show');
-            } catch (err) {
-                authError.textContent = err.message;
-            }
-        });
-
-        // ============================================================
-        //  8. 课程 CRUD
+        //  10. 课程 CRUD
         // ============================================================
         function openAddModal(prefillDate) {
             state.editingId = null;
@@ -2433,9 +1581,7 @@
                 elSingleArea.style.display = 'none';
                 elBatchArea.style.display = 'block';
                 elBtnToggleBatch.textContent = '📝 单个模式';
-                if (elBatchRows.children.length === 0) {
-                    addBatchRow();
-                }
+                if (elBatchRows.children.length === 0) { addBatchRow(); }
             } else {
                 elSingleArea.style.display = 'block';
                 elBatchArea.style.display = 'none';
@@ -2453,30 +1599,22 @@
                 <button type="button" class="btn-remove-row">✕</button>
             `;
             row.querySelector('.btn-remove-row').addEventListener('click', () => {
-                if (elBatchRows.children.length > 1) {
-                    row.remove();
-                } else {
-                    alert('至少保留一行');
-                }
+                if (elBatchRows.children.length > 1) { row.remove(); } else { alert('至少保留一行'); }
             });
             elBatchRows.appendChild(row);
         }
 
-        function saveCourse(e) {
+        async function saveCourse(e) {
             e.preventDefault();
             const courseName = fCourseName.value.trim();
             const studentName = fStudentName.value.trim();
             const classroom = fClassroom.value.trim();
             const totalHours = parseFloat(fTotalHours.value) || 0;
-
             if (!courseName || !studentName) {
                 alert('请填写课程名称和学生姓名');
                 return;
             }
-
-            if (!students[studentName]) {
-                students[studentName] = { totalHours: 0 };
-            }
+            if (!students[studentName]) { students[studentName] = { totalHours: 0 }; }
             students[studentName].totalHours = totalHours;
 
             let entries = [];
@@ -2535,8 +1673,7 @@
                     });
                 }
             }
-
-            autoSave();
+            await saveData();
             closeModal();
             render();
         }
@@ -2558,7 +1695,7 @@
         }
 
         // ============================================================
-        //  9. 详情
+        //  11. 详情
         // ============================================================
         function openDetailModal(courseId) {
             const c = courses.find(x => x.id === courseId);
@@ -2584,7 +1721,7 @@
             if (state.selectedCourseId === null) return;
             if (!confirm('确定删除该课程吗？')) return;
             courses = courses.filter(c => c.id !== state.selectedCourseId);
-            autoSave();
+            saveData();
             closeDetail();
             render();
         }
@@ -2597,45 +1734,7 @@
         }
 
         // ============================================================
-        //  10. 当日课程列表
-        // ============================================================
-        function showDayCourses(dateStr) {
-            dayListTargetDate = dateStr;
-            const dateObj = parseDate(dateStr);
-            dayListDate.textContent = formatDateDisplay(dateObj);
-            const dayCourses = getCoursesForDate(dateStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-            if (dayCourses.length === 0) {
-                dayListContent.innerHTML = `<div class="day-list-empty">📭 当日暂无课程</div>`;
-            } else {
-                let html = '';
-                for (const c of dayCourses) {
-                    html += `
-                        <div class="day-list-item">
-                            <div class="info">
-                                <div class="name">${c.courseName}</div>
-                                <div class="meta">👤 ${c.studentName} ${c.classroom ? '🏫 '+c.classroom : ''}</div>
-                            </div>
-                            <div class="time">${c.startTime} - ${c.endTime}</div>
-                        </div>
-                    `;
-                }
-                dayListContent.innerHTML = html;
-            }
-            dayListOverlay.classList.add('show');
-        }
-
-        function closeDayList() {
-            dayListOverlay.classList.remove('show');
-        }
-
-        function addCourseFromDayList() {
-            closeDayList();
-            openAddModal(dayListTargetDate);
-        }
-
-        // ============================================================
-        //  11. 视图切换 & 缩放
+        //  12. 视图切换 & 缩放
         // ============================================================
         function setView(mode) {
             state.viewMode = mode;
@@ -2685,7 +1784,7 @@
         }
 
         // ============================================================
-        //  12. 事件绑定
+        //  13. 事件绑定
         // ============================================================
         function initEvents() {
             elViewToggle.addEventListener('click', (e) => {
@@ -2693,22 +1792,30 @@
                 if (!btn || !btn.dataset.view) return;
                 setView(btn.dataset.view);
             });
-
             elSubToggle.addEventListener('click', (e) => {
                 const btn = e.target.closest('button');
                 if (!btn || !btn.dataset.sub) return;
                 setSubMode(btn.dataset.sub);
             });
-
             elBtnAdd.addEventListener('click', () => openAddModal());
             elBtnBackToday.addEventListener('click', goToToday);
+            btnExport.addEventListener('click', exportData);
+            btnImport.addEventListener('click', importData);
+
+            dayModalClose.addEventListener('click', closeDayView);
+            dayModal.addEventListener('click', (e) => {
+                if (e.target === dayModal) closeDayView();
+            });
+            dayModalAddBtn.addEventListener('click', () => {
+                closeDayView();
+                openAddModal(dayModalDate);
+            });
 
             elModalCancel.addEventListener('click', closeModal);
             elModal.addEventListener('click', (e) => {
                 if (e.target === elModal) closeModal();
             });
             elForm.addEventListener('submit', saveCourse);
-
             elBtnToggleBatch.addEventListener('click', toggleBatchMode);
             elBtnAddBatchRow.addEventListener('click', () => {
                 addBatchRow(fDate.value, fStartTime.value, fEndTime.value);
@@ -2724,16 +1831,10 @@
             zoomIn.addEventListener('click', zoomInAction);
             zoomOut.addEventListener('click', zoomOutAction);
 
-            // 当日列表事件
-            dayListClose.addEventListener('click', closeDayList);
-            dayListOverlay.addEventListener('click', (e) => {
-                if (e.target === dayListOverlay) closeDayList();
-            });
-            dayListAdd.addEventListener('click', addCourseFromDayList);
-
             document.addEventListener('keydown', (e) => {
-                if (elModal.classList.contains('show') || elDetail.classList.contains('show') || dayListOverlay.classList
-                    .contains('show')) return;
+                if (elModal.classList.contains('show') || elDetail.classList.contains('show') || dayModal.classList
+                    .contains('show') || authModal.classList.contains('show') || syncModal.classList.contains('show'))
+                    return;
                 if (e.key === 'ArrowLeft') { e.preventDefault();
                     navigateWeek(-1); }
                 if (e.key === 'ArrowRight') { e.preventDefault();
@@ -2748,7 +1849,7 @@
         }
 
         // ============================================================
-        //  13. PWA 支持
+        //  14. PWA 支持
         // ============================================================
         function setupPWA() {
             const iconSvg = (size) =>
@@ -2756,7 +1857,6 @@
                     <rect width="${size}" height="${size}" fill="#4f7df3" rx="${size * 0.2}"/>
                     <text x="${size/2}" y="${size/2 + size*0.08}" font-size="${size*0.5}" text-anchor="middle" dominant-baseline="central">📚</text>
                 </svg>`;
-
             const manifestData = {
                 name: '课程表',
                 short_name: '课程表',
@@ -2772,35 +1872,25 @@
                         type: 'image/svg+xml' },
                 ]
             };
-
             const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
             const manifestURL = URL.createObjectURL(manifestBlob);
             const manifestLink = document.getElementById('manifestLink');
-            if (manifestLink) {
-                manifestLink.href = manifestURL;
-            }
-
+            if (manifestLink) { manifestLink.href = manifestURL; }
             if ('serviceWorker' in navigator) {
                 const swCode = `
                     const CACHE_NAME = 'course-table-v1';
                     const urlsToCache = ['./'];
-
                     self.addEventListener('install', event => {
                         event.waitUntil(
-                            caches.open(CACHE_NAME)
-                                .then(cache => cache.addAll(urlsToCache))
-                                .then(() => self.skipWaiting())
+                            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)).then(() => self.skipWaiting())
                         );
                     });
-
                     self.addEventListener('activate', event => {
                         event.waitUntil(self.clients.claim());
                     });
-
                     self.addEventListener('fetch', event => {
                         event.respondWith(
-                            caches.match(event.request)
-                                .then(response => response || fetch(event.request))
+                            caches.match(event.request).then(response => response || fetch(event.request))
                         );
                     });
                 `;
@@ -2813,14 +1903,56 @@
         }
 
         // ============================================================
-        //  14. 初始化
+        //  15. 初始化
         // ============================================================
-        function init() {
+        async function init() {
+            // 先尝试加载本地数据作为默认
+            const hasLocal = loadLocalData();
+            if (!hasLocal || courses.length === 0) {
+                // 生成示例数据
+                const today = new Date();
+                const ds = formatDate(today);
+                courses.push({
+                    id: nextId++,
+                    courseName: '示例课程',
+                    studentName: '张三',
+                    classroom: 'A101',
+                    date: ds,
+                    startTime: '09:00',
+                    endTime: '10:00',
+                });
+                students['张三'] = { totalHours: 20 };
+                const ds2 = formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1));
+                courses.push({
+                    id: nextId++,
+                    courseName: '晚间课程',
+                    studentName: '张三',
+                    classroom: 'B202',
+                    date: ds2,
+                    startTime: '20:00',
+                    endTime: '22:00',
+                });
+                saveLocalData();
+            }
+
+            // 设置当前日期
             state.currentDate = new Date();
+            // 初始化模式为本地（默认）
+            state.mode = 'local';
+            updateModeUI();
+
             render();
             initEvents();
             elSubToggle.style.display = 'flex';
             setupPWA();
+
+            // 清理定时器
+            window.addEventListener('beforeunload', () => {
+                if (highlightInterval) {
+                    clearInterval(highlightInterval);
+                    highlightInterval = null;
+                }
+            });
         }
 
         init();
