@@ -4,20 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>课程表</title>
-    <!-- 离线 PWA 支持 -->
     <link rel="manifest" id="manifestLink" />
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ===== 全局样式 ===== */
+        /* ===== 全局样式（保持不变） ===== */
         * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
         body { background:#f4f6fa; min-height:100vh; display:flex; justify-content:center; padding:20px; }
         #app { max-width:1500px; width:100%; background:white; border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,0.08); overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 40px); }
 
-        /* 导航栏 */
         .navbar { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; background:white; border-bottom:1px solid #eef1f5; flex-shrink:0; flex-wrap:wrap; gap:8px; }
         .navbar-left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
         .navbar-title { font-size:20px; font-weight:700; color:#1a2332; }
@@ -40,27 +37,24 @@
         .data-tools button { background:transparent; border:1px solid #e2e8f0; border-radius:16px; padding:4px 12px; font-size:12px; cursor:pointer; transition:.2s; color:#4f7df3; }
         .data-tools button:hover { background:#eef4fe; }
 
-        /* 模式切换 & 用户状态 */
         .mode-switch { display:flex; align-items:center; gap:6px; font-size:13px; color:#2c3e50; }
         .mode-switch .mode-label { font-weight:500; }
         .mode-switch button { background:transparent; border:1px solid #e2e8f0; border-radius:16px; padding:4px 12px; font-size:12px; cursor:pointer; transition:.2s; color:#4f7df3; }
         .mode-switch button:hover { background:#eef4fe; }
         .mode-switch .user-email { font-weight:500; color:#4f7df3; margin-left:4px; }
 
-        /* 主内容 */
         .main-content { flex:1; display:flex; overflow:hidden; position:relative; }
         .calendar-wrap { flex:1; overflow:auto; padding:16px 20px 20px 20px; background:#ffffff; }
         .calendar-wrap::-webkit-scrollbar { width:6px; height:6px; }
         .calendar-wrap::-webkit-scrollbar-thumb { background:#d0d7e2; border-radius:8px; }
 
-        /* 缩放按钮 */
         .zoom-controls { position:absolute; top:16px; right:20px; z-index:50; display:none; gap:6px; background:rgba(255,255,255,0.75); backdrop-filter:blur(4px); padding:4px 8px; border-radius:24px; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid rgba(255,255,255,0.5); }
         .zoom-controls.visible { display:flex; }
         .zoom-controls button { background:transparent; border:none; font-size:22px; font-weight:300; color:#2c3e50; width:32px; height:32px; border-radius:50%; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; opacity:.7; }
         .zoom-controls button:hover { background:rgba(79,125,243,0.12); opacity:1; }
         .zoom-controls .zoom-level { font-size:13px; font-weight:600; color:#4f7df3; min-width:40px; text-align:center; line-height:32px; }
 
-        /* ===== 月视图 ===== (略，与之前相同，但保留完整) */
+        /* ===== 月视图 ===== */
         .month-grid-wrap { display:flex; gap:28px; justify-content:center; align-items:flex-start; }
         .month-grid-wrap.single { gap:0; justify-content:center; margin-top:60px; }
         .month-grid-wrap.single .month-card { max-width:800px; width:100%; transition:transform .2s ease; transform-origin:top center; }
@@ -76,12 +70,22 @@
         .month-day-cell .day-number { font-size:14px; font-weight:500; color:#1a2332; line-height:1.2; margin-bottom:2px; flex-shrink:0; }
         .month-day-cell.today { border-color:#4f7df3; background:#f5f8ff; }
         .month-day-cell.today .day-number { color:#4f7df3; }
-        .month-day-cell .course-slots { flex:1; position:relative; min-height:40px; display:flex; flex-direction:column; gap:1px; margin-top:2px; }
-        .month-day-cell .course-slot { border-radius:3px; font-size:8px; line-height:1.2; padding:1px 3px; color:#1a2332; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:.1s; border-left:2px solid #4f7df3; background:rgba(79,125,243,0.10); flex-shrink:0; min-height:3px; }
-        .month-day-cell .course-slot:hover { opacity:.8; }
-        .month-day-cell .more-indicator { font-size:8px; color:#8a9aa8; margin-top:1px; }
+        .month-day-cell .course-slots { flex:1; position:relative; min-height:40px; margin-top:2px; overflow:hidden; }
+        .month-day-cell .course-slot { 
+            position:absolute; left:2px; right:2px; 
+            border-radius:3px; font-size:8px; line-height:1.2; 
+            padding:1px 3px; color:#1a2332; font-weight:500; 
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; 
+            cursor:pointer; transition:.1s; 
+            border-left:2px solid #4f7df3; 
+            background:rgba(79,125,243,0.10); 
+            min-height:4px;
+            z-index:1;
+        }
+        .month-day-cell .course-slot:hover { opacity:.8; z-index:2; }
+        .month-day-cell .more-indicator { font-size:8px; color:#8a9aa8; margin-top:1px; position:relative; z-index:1; }
 
-        /* ===== 周视图 ===== (略) */
+        /* ===== 周视图 ===== */
         .week-dual-wrap { display:flex; flex-direction:column; gap:30px; }
         .week-single-wrap { position:relative; border:1px solid #eef1f5; border-radius:16px; overflow:hidden; background:#fafbfc; }
         .week-single-wrap .week-header { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; background:white; border-bottom:1px solid #eef1f5; font-weight:600; font-size:15px; color:#1a2332; }
@@ -181,14 +185,184 @@
         .detail-box .detail-actions .btn-close { background:#f0f2f5; color:#5a6879; }
         .detail-box .detail-actions .btn-close:hover { background:#e2e6ec; }
 
+        /* ================================================================
+           ★★★ 美化后的登录/注册模态框样式 ★★★
+           ================================================================ */
+        #authModal .modal-box {
+            max-width: 440px;
+            padding: 36px 40px 32px;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        #authModal .modal-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4f7df3, #7b9ff5, #4f7df3);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        #authModal h2 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1a2332;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        #authModal h2::before {
+            content: '🔐 ';
+        }
+        #authModal .sub-hint {
+            font-size: 15px;
+            color: #8a9aa8;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #f0f2f5;
+            padding-bottom: 16px;
+        }
+        #authModal label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 16px 0 4px 0;
+            display: block;
+        }
+        #authModal input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: .25s;
+            background: #fafbfc;
+            outline: none;
+        }
+        #authModal input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(79,125,243,0.10);
+        }
+        #authModal .error-msg {
+            color: #d9534f;
+            background: #fde8e8;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin: 12px 0 0 0;
+            display: none;
+        }
+        #authModal .error-msg.show {
+            display: block;
+        }
+        #authModal .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        #authModal .actions .btn-cancel {
+            background: #f0f2f5;
+            color: #5a6879;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .2s;
+        }
+        #authModal .actions .btn-cancel:hover {
+            background: #e2e6ec;
+        }
+        #authModal .actions .btn-confirm {
+            background: #4f7df3;
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .2s;
+            min-width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #authModal .actions .btn-confirm:hover:not(:disabled) {
+            background: #3a66d9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(79,125,243,0.3);
+        }
+        #authModal .actions .btn-confirm:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        #authModal .actions .btn-confirm .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        #authModal .actions .btn-confirm.loading .spinner {
+            display: inline-block;
+        }
+        #authModal .actions .btn-confirm.loading .btn-text {
+            display: none;
+        }
+        #authModal .actions .btn-confirm.loading .btn-text-loading {
+            display: inline;
+        }
+        #authModal .actions .btn-confirm .btn-text-loading {
+            display: none;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #authModal .switch-mode {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f2f5;
+            font-size: 14px;
+            color: #8a9aa8;
+        }
+        #authModal .switch-mode a {
+            color: #4f7df3;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: .2s;
+            margin-left: 4px;
+        }
+        #authModal .switch-mode a:hover {
+            color: #3a66d9;
+            text-decoration: underline;
+        }
+
         @media (max-width:1024px) { .month-grid-wrap { flex-wrap:wrap; } .month-card { max-width:100%; min-width:220px; } .navbar { padding:10px 16px; } .navbar-title { font-size:17px; } .btn-add-nav { padding:6px 14px; font-size:13px; } .calendar-wrap { padding:12px 12px 16px 12px; } .modal-box { max-width:95%; padding:20px; } .batch-area .batch-row { flex-wrap:wrap; } .batch-area .batch-row input { min-width:60px; flex:1 0 80px; } .zoom-controls { top:12px; right:12px; } }
         @media (max-width:700px) { #app { height:auto; min-height:100vh; border-radius:16px; } .navbar { flex-direction:column; align-items:stretch; gap:6px; } .navbar-left { flex-wrap:wrap; justify-content:center; } .navbar-right { justify-content:center; flex-wrap:wrap; } .navbar-stats { font-size:13px; padding:4px 14px; } .modal-box { padding:16px; } .month-day-cell { min-height:54px; padding:2px 3px; } .month-day-cell .day-number { font-size:12px; } .month-day-cell .course-slot { font-size:7px; padding:0 2px; } .week-grid { min-width:500px; } .week-grid .grid-body { height:480px; } .week-grid .grid-body .day-column .course-block { font-size:9px; padding:1px 4px; } .week-grid .grid-body .day-column .course-block .course-name { font-size:10px; } .zoom-controls { top:8px; right:8px; padding:2px 6px; } .zoom-controls button { font-size:18px; width:26px; height:26px; } .zoom-controls .zoom-level { font-size:12px; min-width:30px; line-height:26px; } .month-grid-wrap.single { margin-top:50px; } }
     </style>
 </head>
 <body>
 
+    <!-- ===== HTML 结构（完全相同的模态框，但按钮增加了加载状态） ===== -->
     <div id="app">
-        <!-- 导航栏 -->
         <nav class="navbar">
             <div class="navbar-left">
                 <div class="navbar-title">📚 <span>课程表</span></div>
@@ -211,7 +385,6 @@
                     <button id="btnExport" title="导出数据（JSON）">📤 导出</button>
                     <button id="btnImport" title="导入数据（JSON）">📥 导入</button>
                 </div>
-                <!-- 模式切换 + 用户状态 -->
                 <div class="mode-switch" id="modeSwitch">
                     <span class="mode-label" id="modeLabel">📍 本地模式</span>
                     <button id="btnToggleMode">切换至云端</button>
@@ -221,20 +394,17 @@
             </div>
         </nav>
 
-        <!-- 主内容 -->
         <div class="main-content">
             <div class="zoom-controls" id="zoomControls">
                 <button id="zoomOut" title="缩小10%">−</button>
                 <span class="zoom-level" id="zoomLevel">100%</span>
                 <button id="zoomIn" title="放大10%">+</button>
             </div>
-            <div class="calendar-wrap" id="calendarWrap">
-                <!-- 动态渲染 -->
-            </div>
+            <div class="calendar-wrap" id="calendarWrap"></div>
         </div>
     </div>
 
-    <!-- ===== 添加/编辑课程模态框 ===== -->
+    <!-- 其他模态框（保持不变） -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-box">
             <h2 id="modalTitle">添加课程</h2>
@@ -288,7 +458,6 @@
         </div>
     </div>
 
-    <!-- ===== 日视图模态框 ===== -->
     <div class="modal-overlay" id="dayModal">
         <div class="modal-box">
             <h2 id="dayModalTitle">📅 课程列表</h2>
@@ -300,7 +469,7 @@
         </div>
     </div>
 
-    <!-- ===== 登录/注册模态框 ===== -->
+    <!-- ★★★ 美化后的登录/注册模态框（增加加载状态元素） ★★★ -->
     <div class="modal-overlay" id="authModal">
         <div class="modal-box">
             <h2 id="authTitle">登录</h2>
@@ -313,7 +482,11 @@
                 <div class="error-msg" id="authError"></div>
                 <div class="actions">
                     <button type="button" class="btn-cancel" id="authCancel">取消</button>
-                    <button type="submit" class="btn-confirm" id="authSubmit">登录</button>
+                    <button type="submit" class="btn-confirm" id="authSubmit">
+                        <span class="spinner"></span>
+                        <span class="btn-text">登录</span>
+                        <span class="btn-text-loading">登录中…</span>
+                    </button>
                 </div>
             </form>
             <div class="switch-mode">
@@ -323,7 +496,6 @@
         </div>
     </div>
 
-    <!-- ===== 同步选择模态框 ===== -->
     <div class="modal-overlay" id="syncModal">
         <div class="modal-box">
             <h2>📌 数据同步</h2>
@@ -336,7 +508,6 @@
         </div>
     </div>
 
-    <!-- ===== 课程详情弹窗 ===== -->
     <div class="detail-overlay" id="detailOverlay">
         <div class="detail-box">
             <h3>📖 课程详情</h3>
@@ -346,7 +517,7 @@
                 <div class="detail-item"><span class="label">教室</span><span class="value" id="dClassroom">-</span></div>
                 <div class="detail-item"><span class="label">日期</span><span class="value" id="dDate">-</span></div>
                 <div class="detail-item"><span class="label">时间</span><span class="value" id="dTime">-</span></div>
-                <div class="detail-item"><span class="label">剩余课时</span><span class="value" id="dRemain">-</span></div>
+                <div class="detail-item"><span class="label">扣除本课后剩余</span><span class="value" id="dRemain">-</span></div>
             </div>
             <div class="detail-actions">
                 <button class="btn-close" id="detailClose">关闭</button>
@@ -358,7 +529,7 @@
 
     <script>
         // ============================================================
-        //  1. Firebase 配置（请替换为您的实际配置）
+        //  1. Firebase 配置（保持不变）
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD5Zt_QYjqrYjOlqWinNYltJ37Lc8kD-4I",
@@ -372,12 +543,10 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-
-        // 持久化登录状态
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         // ============================================================
-        //  2. 全局状态
+        //  2. 全局状态（不变）
         // ============================================================
         let courses = [];
         let nextId = 1;
@@ -390,16 +559,15 @@
             editingId: null,
             batchMode: false,
             scaleFactor: 1.0,
-            mode: 'local', // 'local' 或 'cloud'
-            user: null, // Firebase user object
+            mode: 'local',
+            user: null,
             userDocRef: null,
         };
         const STORAGE_KEY = 'courseTableData';
 
-        // DOM 元素
+        // DOM 元素（不变）
         const $ = (s) => document.querySelector(s);
         const $$ = (s) => document.querySelectorAll(s);
-
         const elWrap = $('#calendarWrap');
         const elStats = $('#totalHoursCount');
         const elDateLabel = $('#dateLabel');
@@ -413,12 +581,10 @@
         const zoomOut = $('#zoomOut');
         const btnExport = $('#btnExport');
         const btnImport = $('#btnImport');
-
         const modeLabel = $('#modeLabel');
         const btnToggleMode = $('#btnToggleMode');
         const userEmailDisplay = $('#userEmailDisplay');
 
-        // 课程模态框
         const elModal = $('#modalOverlay');
         const elModalTitle = $('#modalTitle');
         const elModalSub = $('#modalSubHint');
@@ -438,7 +604,6 @@
         const elBatchRows = $('#batchRows');
         const elBtnToggleBatch = $('#btnToggleBatch');
         const elBtnAddBatchRow = $('#btnAddBatchRow');
-
         const courseDropdown = $('#courseDropdown');
         const studentDropdown = $('#studentDropdown');
         const courseDropdownList = $('#courseDropdownList');
@@ -451,7 +616,7 @@
         const dayModalClose = $('#dayModalClose');
         let dayModalDate = '';
 
-        // 认证模态框
+        // 认证相关 DOM
         const authModal = $('#authModal');
         const authTitle = $('#authTitle');
         const authSubHint = $('#authSubHint');
@@ -465,12 +630,11 @@
         const switchText = $('#switchText');
         let isLoginMode = true;
 
-        // 同步模态框
         const syncModal = $('#syncModal');
         const syncCloudToLocal = $('#syncCloudToLocal');
         const syncLocalToCloud = $('#syncLocalToCloud');
         const syncCancel = $('#syncCancel');
-        let syncResolve = null; // 用于 Promise
+        let syncResolve = null;
 
         const elDetail = $('#detailOverlay');
         const dCourseName = $('#dCourseName');
@@ -484,373 +648,93 @@
         const elDetailDelete = $('#detailDelete');
 
         // ============================================================
-        //  3. 工具函数
+        //  3. 工具函数（与之前相同）
         // ============================================================
         function pad(n) { return String(n).padStart(2, '0'); }
-
-        function formatDate(d) {
-            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-        }
-
-        function parseDate(str) {
-            const p = str.split('-').map(Number);
-            return new Date(p[0], p[1] - 1, p[2]);
-        }
-
-        function formatDateDisplay(d) {
-            return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-        }
-
+        function formatDate(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+        function parseDate(str) { const p = str.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+        function formatDateDisplay(d) { return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
         function toMinutes(h, m) { return h * 60 + m; }
+        function getWeekStart(date) { const d = new Date(date); const day = d.getDay(); const diff = (day === 0 ? 6 : day - 1); d.setDate(d.getDate() - diff); d.setHours(0,0,0,0); return d; }
+        function getWeekEnd(date) { const d = getWeekStart(date); d.setDate(d.getDate() + 6); return d; }
+        function getMonthDays(year, month) { return new Date(year, month + 1, 0).getDate(); }
+        function getFirstDayOfMonth(year, month) { return new Date(year, month, 1).getDay(); }
+        function getCoursesForDate(dateStr) { return courses.filter(c => c.date === dateStr); }
+        function getCoursesForWeek(date) { const start = getWeekStart(date); const end = getWeekEnd(date); const result = []; for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) { const ds = formatDate(d); const cs = getCoursesForDate(ds); for (const c of cs) result.push({ ...c, _displayDate: new Date(d) }); } return result; }
+        function getStudentUsedHours(studentName, excludeId = null) { let total = 0; for (const c of courses) { if (c.studentName !== studentName) continue; if (excludeId !== null && c.id === excludeId) continue; const [sh, sm] = c.startTime.split(':').map(Number); const [eh, em] = c.endTime.split(':').map(Number); total += (toMinutes(eh, em) - toMinutes(sh, sm)) / 60; } return total; }
 
-        function getWeekStart(date) {
-            const d = new Date(date);
-            const day = d.getDay();
-            const diff = (day === 0 ? 6 : day - 1);
-            d.setDate(d.getDate() - diff);
-            d.setHours(0, 0, 0, 0);
-            return d;
-        }
-
-        function getWeekEnd(date) {
-            const d = getWeekStart(date);
-            d.setDate(d.getDate() + 6);
-            return d;
-        }
-
-        function getMonthDays(year, month) {
-            return new Date(year, month + 1, 0).getDate();
-        }
-
-        function getFirstDayOfMonth(year, month) {
-            return new Date(year, month, 1).getDay();
-        }
-
-        function getCoursesForDate(dateStr) {
-            return courses.filter(c => c.date === dateStr);
-        }
-
-        function getCoursesForWeek(date) {
-            const start = getWeekStart(date);
-            const end = getWeekEnd(date);
-            const result = [];
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const ds = formatDate(d);
-                const cs = getCoursesForDate(ds);
-                for (const c of cs) result.push({ ...c, _displayDate: new Date(d) });
-            }
-            return result;
-        }
-
-        function getStudentUsedHours(studentName, excludeId = null) {
-            let total = 0;
-            for (const c of courses) {
-                if (c.studentName !== studentName) continue;
-                if (excludeId !== null && c.id === excludeId) continue;
-                const [sh, sm] = c.startTime.split(':').map(Number);
-                const [eh, em] = c.endTime.split(':').map(Number);
-                total += (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
-            }
-            return total;
-        }
-
-        function getStudentRemainHours(studentName, excludeId = null) {
+        function calculateRemainAfterCourse(studentName, targetDate, targetStart, targetEnd, excludeId = null) {
             const total = students[studentName] ? students[studentName].totalHours : 0;
             if (total === 0) return null;
-            const used = getStudentUsedHours(studentName, excludeId);
-            return Math.max(0, total - used);
-        }
-
-        function getStudentColor(name) {
-            if (!name) return '#e8edf8';
-            const colors = [
-                '#e8edf8', '#f0e8f8', '#f8e8ed', '#e8f8ed', '#f8f0e8',
-                '#e8f0f8', '#f8e8f0', '#e8f8f0', '#f0f8e8', '#f8e8e8',
-                '#d4e0f0', '#f0d4e8', '#e8f0d4', '#f0e8d4', '#d4f0e8'
-            ];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            return colors[Math.abs(hash) % colors.length];
-        }
-
-        function getBorderColor(name) {
-            const colors = ['#4f7df3', '#8b6ce0', '#e06070', '#3aa86a', '#d4a040', '#4080d0', '#c060b0', '#40b0a0'];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            return colors[Math.abs(hash) % colors.length];
-        }
-
-        function getTotalHoursForDateRange(startDate, endDate) {
-            let total = 0;
-            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                const ds = formatDate(d);
-                const cs = getCoursesForDate(ds);
-                for (const c of cs) {
-                    const [sh, sm] = c.startTime.split(':').map(Number);
-                    const [eh, em] = c.endTime.split(':').map(Number);
-                    total += (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
-                }
-            }
-            return total;
-        }
-
-        function getUniqueCourseNames() {
-            return [...new Set(courses.map(c => c.courseName))];
-        }
-
-        function getUniqueStudentNames() {
-            return [...new Set(courses.map(c => c.studentName))];
-        }
-
-        // ============================================================
-        //  4. 数据持久化（本地 + 云端）
-        // ============================================================
-        // ---- 本地存储 ----
-        function saveLocalData() {
-            try {
-                const data = { courses, students, nextId };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch (e) { console.warn('保存本地数据失败:', e); }
-        }
-
-        function loadLocalData() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (!raw) return false;
-                const data = JSON.parse(raw);
-                courses = data.courses || [];
-                students = data.students || {};
-                nextId = data.nextId || 1;
-                return true;
-            } catch (e) { console.warn('读取本地数据失败:', e); return false; }
-        }
-
-        // ---- 云端存储 ----
-        async function loadCloudData() {
-            if (!state.user) return false;
-            try {
-                const doc = await state.userDocRef.get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    courses = data.courses || [];
-                    students = data.students || {};
-                    nextId = data.nextId || 1;
-                    return true;
-                } else {
-                    // 首次使用，创建空文档
-                    await state.userDocRef.set({ courses: [], students: {}, nextId: 1 });
-                    courses = [];
-                    students = {};
-                    nextId = 1;
-                    return true;
-                }
-            } catch (e) {
-                console.warn('读取云端数据失败:', e);
-                return false;
-            }
-        }
-
-        async function saveCloudData() {
-            if (!state.user) return;
-            try {
-                await state.userDocRef.set({
-                    courses: courses,
-                    students: students,
-                    nextId: nextId,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (e) {
-                console.warn('保存云端数据失败:', e);
-            }
-        }
-
-        // ---- 统一保存 ----
-        async function saveData() {
-            if (state.mode === 'local') {
-                saveLocalData();
-            } else {
-                await saveCloudData();
-            }
-        }
-
-        // ---- 统一加载 ----
-        async function loadData() {
-            if (state.mode === 'local') {
-                return loadLocalData();
-            } else {
-                return await loadCloudData();
-            }
-        }
-
-        // ============================================================
-        //  5. 模式切换与同步
-        // ============================================================
-        // 切换模式（仅界面切换，不触发数据迁移）
-        function setMode(mode) {
-            state.mode = mode;
-            updateModeUI();
-            render();
-        }
-
-        function updateModeUI() {
-            if (state.mode === 'local') {
-                modeLabel.textContent = '📍 本地模式';
-                btnToggleMode.textContent = '切换至云端';
-                userEmailDisplay.textContent = '';
-                btnToggleMode.style.display = 'inline-block';
-            } else {
-                modeLabel.textContent = '☁️ 云端模式';
-                if (state.user) {
-                    userEmailDisplay.textContent = state.user.email;
-                    btnToggleMode.textContent = '退出登录';
-                } else {
-                    userEmailDisplay.textContent = '(未登录)';
-                    btnToggleMode.textContent = '登录';
-                }
-            }
-        }
-
-        // 执行同步：弹出选择框
-        function showSyncDialog() {
-            return new Promise((resolve) => {
-                syncModal.classList.add('show');
-                syncResolve = resolve;
+            const all = courses.filter(c => c.studentName === studentName && (excludeId === null || c.id !== excludeId));
+            const withHours = all.map(c => {
+                const [sh, sm] = c.startTime.split(':').map(Number);
+                const [eh, em] = c.endTime.split(':').map(Number);
+                return { ...c, hours: (toMinutes(eh, em) - toMinutes(sh, sm)) / 60 };
             });
-        }
-
-        // 同步回调
-        syncCloudToLocal.addEventListener('click', () => {
-            syncModal.classList.remove('show');
-            if (syncResolve) syncResolve('cloudToLocal');
-        });
-        syncLocalToCloud.addEventListener('click', () => {
-            syncModal.classList.remove('show');
-            if (syncResolve) syncResolve('localToCloud');
-        });
-        syncCancel.addEventListener('click', () => {
-            syncModal.classList.remove('show');
-            if (syncResolve) syncResolve('cancel');
-        });
-        syncModal.addEventListener('click', (e) => {
-            if (e.target === syncModal) {
-                syncModal.classList.remove('show');
-                if (syncResolve) syncResolve('cancel');
-            }
-        });
-
-        // 切换模式主逻辑（处理登录/登出/同步）
-        async function toggleMode() {
-            if (state.mode === 'local') {
-                // 切换到云端：检查登录状态，未登录则弹窗登录
-                if (!state.user) {
-                    // 打开登录框
-                    openAuthModal();
-                    // 等待登录完成（在 auth state 监听中处理）
-                    return; // 登录完成后会由 onAuthStateChanged 继续
-                } else {
-                    // 已登录，直接切换模式
-                    // 但需要先同步数据（如果本地有数据且云端有数据）
-                    await performSyncAndSwitch();
-                }
-            } else {
-                // 云端 -> 本地：退出登录（但保留云端数据）
-                if (state.user) {
-                    await auth.signOut();
-                    // 登出后，自动回到本地模式
-                    // 但数据会保留在本地（之前已经保存过）
-                } else {
-                    // 异常情况，直接切回本地
-                    setMode('local');
+            withHours.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return a.startTime.localeCompare(b.startTime);
+            });
+            const [sh, sm] = targetStart.split(':').map(Number);
+            const [eh, em] = targetEnd.split(':').map(Number);
+            const currentHours = (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
+            let beforeSum = 0;
+            for (const c of withHours) {
+                if (c.date < targetDate || (c.date === targetDate && c.startTime < targetStart)) {
+                    beforeSum += c.hours;
                 }
             }
+            const remain = total - beforeSum - currentHours;
+            return Math.max(0, remain);
         }
 
-        async function performSyncAndSwitch() {
-            // 1. 读取当前本地数据（如果本地有数据）
-            const hasLocal = loadLocalData(); // 加载到 courses 等变量
-            const localCourses = [...courses];
-            const localStudents = { ...students };
-            const localNextId = nextId;
-
-            // 2. 读取云端数据
-            await loadCloudData();
-            const cloudCourses = [...courses];
-            const cloudStudents = { ...students };
-            const cloudNextId = nextId;
-
-            // 3. 判断两者是否有数据
-            const hasLocalData = localCourses.length > 0;
-            const hasCloudData = cloudCourses.length > 0;
-
-            if (hasLocalData && hasCloudData) {
-                // 两者都有数据，弹出选择框
-                const choice = await showSyncDialog();
-                if (choice === 'cloudToLocal') {
-                    // 云端覆盖本地：使用云端数据
-                    courses = cloudCourses;
-                    students = cloudStudents;
-                    nextId = cloudNextId;
-                } else if (choice === 'localToCloud') {
-                    // 本地覆盖云端：使用本地数据
-                    courses = localCourses;
-                    students = localStudents;
-                    nextId = localNextId;
-                    await saveCloudData(); // 立即保存到云端
-                } else {
-                    // 取消：保持当前（不切换模式）
-                    // 但用户点击取消后，我们仍停留在本地模式
-                    setMode('local');
-                    return;
-                }
-            } else if (hasLocalData && !hasCloudData) {
-                // 仅有本地数据：上传到云端
-                courses = localCourses;
-                students = localStudents;
-                nextId = localNextId;
-                await saveCloudData();
-            } else if (!hasLocalData && hasCloudData) {
-                // 仅有云端数据：下载到本地
-                courses = cloudCourses;
-                students = cloudStudents;
-                nextId = cloudNextId;
-            } else {
-                // 都为空：保持空
-            }
-
-            // 保存到当前模式存储（如果是云端，已经存了；如果是本地，则存本地）
-            if (state.mode === 'local') {
-                // 但我们即将切换到云端，所以先保存本地再切换
-                saveLocalData();
-            }
-
-            // 切换模式
-            setMode('cloud');
-            // 渲染
-            render();
-        }
+        function getStudentColor(name) { if (!name) return '#e8edf8'; const colors = ['#e8edf8','#f0e8f8','#f8e8ed','#e8f8ed','#f8f0e8','#e8f0f8','#f8e8f0','#e8f8f0','#f0f8e8','#f8e8e8','#d4e0f0','#f0d4e8','#e8f0d4','#f0e8d4','#d4f0e8']; let hash = 0; for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash); return colors[Math.abs(hash) % colors.length]; }
+        function getBorderColor(name) { const colors = ['#4f7df3','#8b6ce0','#e06070','#3aa86a','#d4a040','#4080d0','#c060b0','#40b0a0']; let hash = 0; for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash); return colors[Math.abs(hash) % colors.length]; }
+        function getTotalHoursForDateRange(startDate, endDate) { let total = 0; for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) { const ds = formatDate(d); const cs = getCoursesForDate(ds); for (const c of cs) { const [sh, sm] = c.startTime.split(':').map(Number); const [eh, em] = c.endTime.split(':').map(Number); total += (toMinutes(eh, em) - toMinutes(sh, sm)) / 60; } } return total; }
+        function getUniqueCourseNames() { return [...new Set(courses.map(c => c.courseName))]; }
+        function getUniqueStudentNames() { return [...new Set(courses.map(c => c.studentName))]; }
 
         // ============================================================
-        //  6. 认证逻辑
+        //  4. 数据持久化（与之前相同）
+        // ============================================================
+        function saveLocalData() { try { const data = { courses, students, nextId }; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { console.warn('保存本地数据失败:', e); } }
+        function loadLocalData() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return false; const data = JSON.parse(raw); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; return true; } catch (e) { console.warn('读取本地数据失败:', e); return false; } }
+        async function loadCloudData() { if (!state.user) return false; try { const doc = await state.userDocRef.get(); if (doc.exists) { const data = doc.data(); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; return true; } else { await state.userDocRef.set({ courses: [], students: {}, nextId: 1 }); courses = []; students = {}; nextId = 1; return true; } } catch (e) { console.warn('读取云端数据失败:', e); return false; } }
+        async function saveCloudData() { if (!state.user) return; try { await state.userDocRef.set({ courses: courses, students: students, nextId: nextId, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch (e) { console.warn('保存云端数据失败:', e); } }
+        async function saveData() { if (state.mode === 'local') { saveLocalData(); } else { await saveCloudData(); } }
+        async function loadData() { if (state.mode === 'local') { return loadLocalData(); } else { return await loadCloudData(); } }
+
+        // ============================================================
+        //  5. 模式切换与同步（与之前相同）
+        // ============================================================
+        function setMode(mode) { state.mode = mode; updateModeUI(); render(); }
+        function updateModeUI() { if (state.mode === 'local') { modeLabel.textContent = '📍 本地模式'; btnToggleMode.textContent = '切换至云端'; userEmailDisplay.textContent = ''; btnToggleMode.style.display = 'inline-block'; } else { modeLabel.textContent = '☁️ 云端模式'; if (state.user) { userEmailDisplay.textContent = state.user.email; btnToggleMode.textContent = '退出登录'; } else { userEmailDisplay.textContent = '(未登录)'; btnToggleMode.textContent = '登录'; } } }
+        function showSyncDialog() { return new Promise((resolve) => { syncModal.classList.add('show'); syncResolve = resolve; }); }
+        syncCloudToLocal.addEventListener('click', () => { syncModal.classList.remove('show'); if (syncResolve) syncResolve('cloudToLocal'); });
+        syncLocalToCloud.addEventListener('click', () => { syncModal.classList.remove('show'); if (syncResolve) syncResolve('localToCloud'); });
+        syncCancel.addEventListener('click', () => { syncModal.classList.remove('show'); if (syncResolve) syncResolve('cancel'); });
+        syncModal.addEventListener('click', (e) => { if (e.target === syncModal) { syncModal.classList.remove('show'); if (syncResolve) syncResolve('cancel'); } });
+        async function toggleMode() { if (state.mode === 'local') { if (!state.user) { openAuthModal(); return; } else { await performSyncAndSwitch(); } } else { if (state.user) { await auth.signOut(); } else { setMode('local'); } } }
+        async function performSyncAndSwitch() { const hasLocal = loadLocalData(); const localCourses = [...courses]; const localStudents = { ...students }; const localNextId = nextId; await loadCloudData(); const cloudCourses = [...courses]; const cloudStudents = { ...students }; const cloudNextId = nextId; const hasLocalData = localCourses.length > 0; const hasCloudData = cloudCourses.length > 0; if (hasLocalData && hasCloudData) { const choice = await showSyncDialog(); if (choice === 'cloudToLocal') { courses = cloudCourses; students = cloudStudents; nextId = cloudNextId; } else if (choice === 'localToCloud') { courses = localCourses; students = localStudents; nextId = localNextId; await saveCloudData(); } else { setMode('local'); return; } } else if (hasLocalData && !hasCloudData) { courses = localCourses; students = localStudents; nextId = localNextId; await saveCloudData(); } else if (!hasLocalData && hasCloudData) { courses = cloudCourses; students = cloudStudents; nextId = cloudNextId; } if (state.mode === 'local') { saveLocalData(); } setMode('cloud'); render(); }
+
+        // ============================================================
+        //  6. 认证逻辑（★ 优化：增加加载状态 ★）
         // ============================================================
         auth.onAuthStateChanged(async (user) => {
             state.user = user;
             if (user) {
                 state.userDocRef = db.collection('users').doc(user.uid);
                 userEmailDisplay.textContent = user.email;
-                // 如果当前是本地模式，且用户点击了“切换至云端”，则进入同步流程
                 if (state.mode === 'local') {
-                    // 但我们需要等用户点击按钮才执行，所以这里不做自动切换
-                    // 只是更新UI
                     updateModeUI();
                 } else {
-                    // 已经处于云端模式，重新加载数据
                     await loadCloudData();
                     render();
                 }
             } else {
                 state.userDocRef = null;
                 userEmailDisplay.textContent = '';
-                // 如果当前是云端模式但用户未登录，自动切回本地
                 if (state.mode === 'cloud') {
                     setMode('local');
                 }
@@ -858,17 +742,20 @@
             updateModeUI();
         });
 
-        // 登录/注册模态框
         function openAuthModal() {
             isLoginMode = true;
             authTitle.textContent = '登录';
             authSubHint.textContent = '使用您的邮箱和密码';
-            authSubmit.textContent = '登录';
+            authSubmit.querySelector('.btn-text').textContent = '登录';
+            authSubmit.querySelector('.btn-text-loading').textContent = '登录中…';
             switchText.textContent = '还没有账号？';
             switchMode.textContent = '注册';
             authError.textContent = '';
+            authError.classList.remove('show');
             authEmail.value = '';
             authPassword.value = '';
+            authSubmit.disabled = false;
+            authSubmit.classList.remove('loading');
             authModal.classList.add('show');
         }
 
@@ -881,59 +768,83 @@
             isLoginMode = !isLoginMode;
             authTitle.textContent = isLoginMode ? '登录' : '注册';
             authSubHint.textContent = isLoginMode ? '使用您的邮箱和密码' : '创建新账号';
-            authSubmit.textContent = isLoginMode ? '登录' : '注册';
+            const btnText = isLoginMode ? '登录' : '注册';
+            authSubmit.querySelector('.btn-text').textContent = btnText;
+            authSubmit.querySelector('.btn-text-loading').textContent = btnText + '中…';
             switchText.textContent = isLoginMode ? '还没有账号？' : '已有账号？';
             switchMode.textContent = isLoginMode ? '注册' : '登录';
             authError.textContent = '';
+            authError.classList.remove('show');
+            authSubmit.disabled = false;
+            authSubmit.classList.remove('loading');
         });
 
+        // ★★★ 登录/注册提交（增加加载状态与错误提示） ★★★
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = authEmail.value.trim();
             const password = authPassword.value.trim();
+
+            // 清除旧错误
+            authError.textContent = '';
+            authError.classList.remove('show');
+
             if (!email || !password) {
                 authError.textContent = '请填写邮箱和密码';
+                authError.classList.add('show');
                 return;
             }
             if (password.length < 6) {
                 authError.textContent = '密码至少6位';
+                authError.classList.add('show');
                 return;
             }
-            authError.textContent = '';
+
+            // 启用加载状态
+            authSubmit.disabled = true;
+            authSubmit.classList.add('loading');
+
             try {
                 if (isLoginMode) {
                     await auth.signInWithEmailAndPassword(email, password);
                 } else {
                     await auth.createUserWithEmailAndPassword(email, password);
                 }
+                // 成功：关闭模态框，恢复按钮状态
                 authModal.classList.remove('show');
-                // 登录成功后，如果当前是本地模式，且用户点击了“切换至云端”，则会触发按钮逻辑
-                // 我们在这里判断：如果当前在本地模式，则自动执行切换（因为用户刚登录，意图是切换到云端）
+                authSubmit.disabled = false;
+                authSubmit.classList.remove('loading');
                 if (state.mode === 'local') {
                     await performSyncAndSwitch();
                 }
             } catch (err) {
-                authError.textContent = err.message;
+                // 显示友好的错误信息
+                let msg = err.message;
+                if (msg.includes('user-not-found')) msg = '用户不存在，请先注册';
+                else if (msg.includes('wrong-password')) msg = '密码错误，请重试';
+                else if (msg.includes('email-already-in-use')) msg = '该邮箱已被注册，请直接登录';
+                else if (msg.includes('invalid-email')) msg = '邮箱格式不正确';
+                else if (msg.includes('too-many-requests')) msg = '请求过于频繁，请稍后再试';
+                else if (msg.includes('network-request-failed')) msg = '网络连接失败，请检查网络后重试';
+                authError.textContent = msg;
+                authError.classList.add('show');
+                // 恢复按钮
+                authSubmit.disabled = false;
+                authSubmit.classList.remove('loading');
             }
         });
 
-        // 切换按钮点击事件
+        // 切换模式按钮（不变）
         btnToggleMode.addEventListener('click', async () => {
             if (state.mode === 'local') {
-                // 切换到云端
                 if (!state.user) {
-                    // 未登录，先登录
                     openAuthModal();
-                    // 登录成功后会自动触发 performSyncAndSwitch
                 } else {
-                    // 已登录，直接同步切换
                     await performSyncAndSwitch();
                 }
             } else {
-                // 云端 -> 本地：退出登录
                 if (state.user) {
                     await auth.signOut();
-                    // 登出后，模式会自动变为本地（在 onAuthStateChanged 中处理）
                 } else {
                     setMode('local');
                 }
@@ -941,129 +852,22 @@
         });
 
         // ============================================================
-        //  7. 导入导出
+        //  7. 导入导出（与之前相同）
         // ============================================================
-        function exportData() {
-            const data = { courses, students, nextId, exportDate: new Date().toISOString() };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `课程表数据_${formatDate(new Date())}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const data = JSON.parse(ev.target.result);
-                        if (!data.courses || !data.students || data.nextId === undefined) {
-                            alert('无效的数据文件');
-                            return;
-                        }
-                        if (!confirm('导入将覆盖当前所有数据，确认继续吗？')) return;
-                        courses = data.courses;
-                        students = data.students;
-                        nextId = data.nextId || 1;
-                        saveData();
-                        render();
-                        alert('数据导入成功！');
-                    } catch (err) { alert('读取文件失败: ' + err.message); }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        }
+        function exportData() { const data = { courses, students, nextId, exportDate: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `课程表数据_${formatDate(new Date())}.json`; a.click(); URL.revokeObjectURL(url); }
+        function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { try { const data = JSON.parse(ev.target.result); if (!data.courses || !data.students || data.nextId === undefined) { alert('无效的数据文件'); return; } if (!confirm('导入将覆盖当前所有数据，确认继续吗？')) return; courses = data.courses; students = data.students; nextId = data.nextId || 1; saveData(); render(); alert('数据导入成功！'); } catch (err) { alert('读取文件失败: ' + err.message); } }; reader.readAsText(file); }; input.click(); }
 
         // ============================================================
-        //  8. 下拉提示
+        //  8. 下拉提示（与之前相同）
         // ============================================================
-        function buildDropdownList(inputEl, listEl, dataArray, type) {
-            const val = inputEl.value.trim().toLowerCase();
-            let filtered = dataArray;
-            if (val) {
-                filtered = dataArray.filter(item => item.toLowerCase().includes(val));
-            }
-            listEl.innerHTML = '';
-            if (filtered.length === 0) {
-                listEl.innerHTML = `<div class="dropdown-empty">暂无匹配项</div>`;
-            } else {
-                for (const item of filtered) {
-                    const div = document.createElement('div');
-                    div.className = 'dropdown-item';
-                    const textSpan = document.createElement('span');
-                    textSpan.className = 'item-text';
-                    textSpan.textContent = item;
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'item-delete';
-                    delBtn.textContent = '×';
-                    delBtn.title = '删除此名称及其所有课程';
-                    delBtn.addEventListener('mousedown', (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        if (confirm(`确定要删除所有 "${item}" 的课程记录吗？`)) {
-                            if (type === 'course') {
-                                courses = courses.filter(c => c.courseName !== item);
-                            } else {
-                                courses = courses.filter(c => c.studentName !== item);
-                                delete students[item];
-                            }
-                            saveData();
-                            closeModal();
-                            render();
-                            openAddModal(fDate.value);
-                            if (type === 'course') { fCourseName.value = item; } else { fStudentName.value = item; }
-                            alert(`已删除所有 "${item}" 的课程记录。`);
-                        }
-                    });
-                    div.addEventListener('click', (e) => {
-                        if (e.target === delBtn || delBtn.contains(e.target)) return;
-                        inputEl.value = item;
-                        listEl.classList.remove('active');
-                        inputEl.dispatchEvent(new Event('input'));
-                    });
-                    div.appendChild(textSpan);
-                    div.appendChild(delBtn);
-                    listEl.appendChild(div);
-                }
-            }
-            listEl.classList.add('active');
-        }
-
-        function setupDropdown(inputEl, listEl, type) {
-            inputEl.addEventListener('input', function() {
-                const data = type === 'course' ? getUniqueCourseNames() : getUniqueStudentNames();
-                buildDropdownList(inputEl, listEl, data, type);
-            });
-            inputEl.addEventListener('focus', function() {
-                const data = type === 'course' ? getUniqueCourseNames() : getUniqueStudentNames();
-                buildDropdownList(inputEl, listEl, data, type);
-            });
-            inputEl.addEventListener('blur', function() {
-                setTimeout(() => { listEl.classList.remove('active'); }, 200);
-            });
-            document.addEventListener('click', function(e) {
-                if (!inputEl.contains(e.target) && !listEl.contains(e.target)) {
-                    listEl.classList.remove('active');
-                }
-            });
-            listEl.addEventListener('mousedown', (e) => { e.preventDefault(); });
-        }
+        function buildDropdownList(inputEl, listEl, dataArray, type) { const val = inputEl.value.trim().toLowerCase(); let filtered = dataArray; if (val) { filtered = dataArray.filter(item => item.toLowerCase().includes(val)); } listEl.innerHTML = ''; if (filtered.length === 0) { listEl.innerHTML = `<div class="dropdown-empty">暂无匹配项</div>`; } else { for (const item of filtered) { const div = document.createElement('div'); div.className = 'dropdown-item'; const textSpan = document.createElement('span'); textSpan.className = 'item-text'; textSpan.textContent = item; const delBtn = document.createElement('button'); delBtn.className = 'item-delete'; delBtn.textContent = '×'; delBtn.title = '删除此名称及其所有课程'; delBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); e.preventDefault(); if (confirm(`确定要删除所有 "${item}" 的课程记录吗？`)) { if (type === 'course') { courses = courses.filter(c => c.courseName !== item); } else { courses = courses.filter(c => c.studentName !== item); delete students[item]; } saveData(); closeModal(); render(); openAddModal(fDate.value); if (type === 'course') { fCourseName.value = item; } else { fStudentName.value = item; } alert(`已删除所有 "${item}" 的课程记录。`); } }); div.addEventListener('click', (e) => { if (e.target === delBtn || delBtn.contains(e.target)) return; inputEl.value = item; listEl.classList.remove('active'); inputEl.dispatchEvent(new Event('input')); }); div.appendChild(textSpan); div.appendChild(delBtn); listEl.appendChild(div); } } listEl.classList.add('active'); }
+        function setupDropdown(inputEl, listEl, type) { inputEl.addEventListener('input', function() { const data = type === 'course' ? getUniqueCourseNames() : getUniqueStudentNames(); buildDropdownList(inputEl, listEl, data, type); }); inputEl.addEventListener('focus', function() { const data = type === 'course' ? getUniqueCourseNames() : getUniqueStudentNames(); buildDropdownList(inputEl, listEl, data, type); }); inputEl.addEventListener('blur', function() { setTimeout(() => { listEl.classList.remove('active'); }, 200); }); document.addEventListener('click', function(e) { if (!inputEl.contains(e.target) && !listEl.contains(e.target)) { listEl.classList.remove('active'); } }); listEl.addEventListener('mousedown', (e) => { e.preventDefault(); }); }
 
         // ============================================================
-        //  9. 渲染核心
+        //  9. 渲染核心（与之前相同）
         // ============================================================
         function render() {
             if (state.mode === 'local' || state.user) {
-                // 正常渲染
                 if (state.viewMode === 'month') {
                     renderMonthView();
                 } else {
@@ -1078,8 +882,8 @@
                     zoomControls.classList.remove('visible');
                     resetZoom();
                 }
+                refreshDetailIfOpen();
             } else {
-                // 云端模式但未登录（不应该发生）
                 elWrap.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;color:#8a9aa8;">请先登录</div>`;
                 zoomControls.classList.remove('visible');
                 elStats.textContent = '0';
@@ -1087,19 +891,8 @@
             }
         }
 
-        function applyZoom() {
-            const cards = document.querySelectorAll('.month-grid-wrap.single .month-card');
-            for (const card of cards) {
-                card.style.transform = `scale(${state.scaleFactor})`;
-            }
-        }
-
-        function resetZoom() {
-            const cards = document.querySelectorAll('.month-grid-wrap.single .month-card');
-            for (const card of cards) {
-                card.style.transform = '';
-            }
-        }
+        function applyZoom() { const cards = document.querySelectorAll('.month-grid-wrap.single .month-card'); for (const card of cards) { card.style.transform = `scale(${state.scaleFactor})`; } }
+        function resetZoom() { const cards = document.querySelectorAll('.month-grid-wrap.single .month-card'); for (const card of cards) { card.style.transform = ''; } }
 
         // ----- 月视图 -----
         function renderMonthView() {
@@ -1164,18 +957,12 @@
                     const day = prevMonthDays - startOffset + i + 1;
                     const m = month === 0 ? 11 : month - 1;
                     const y = month === 0 ? year - 1 : year;
-                    displayDay = day;
-                    displayMonth = m;
-                    displayYear = y;
-                    isOther = true;
+                    displayDay = day; displayMonth = m; displayYear = y; isOther = true;
                 } else if (i >= startOffset + daysInMonth) {
                     const day = i - startOffset - daysInMonth + 1;
                     const m = month === 11 ? 0 : month + 1;
                     const y = month === 11 ? year + 1 : year;
-                    displayDay = day;
-                    displayMonth = m;
-                    displayYear = y;
-                    isOther = true;
+                    displayDay = day; displayMonth = m; displayYear = y; isOther = true;
                 } else {
                     displayDay = i - startOffset + 1;
                     displayMonth = month;
@@ -1207,9 +994,9 @@
                     const heightPct = ((clampedEnd - clampedStart) / totalDayMinutes) * 100;
                     const color = getStudentColor(c.studentName);
                     const border = getBorderColor(c.studentName);
-                    const finalHeight = Math.max(heightPct, 2);
+                    const finalHeight = Math.max(heightPct, 3);
                     html += `<div class="course-slot" data-course-id="${c.id}" 
-                                style="background:${color};border-left-color:${border};width:100%;height:${finalHeight}%;margin-top:${topPct}%;position:relative;margin-bottom:1px;">
+                                style="top:${topPct}%; height:${finalHeight}%; background:${color}; border-left-color:${border};">
                                 ${c.startTime} - ${c.endTime}
                             </div>`;
                 }
@@ -1246,19 +1033,13 @@
                 dayCourseList.querySelectorAll('.day-course-item').forEach(el => {
                     el.addEventListener('click', () => {
                         const id = parseInt(el.dataset.id);
-                        if (!isNaN(id)) {
-                            closeDayView();
-                            openDetailModal(id);
-                        }
+                        if (!isNaN(id)) { closeDayView(); openDetailModal(id); }
                     });
                 });
             }
             dayModal.classList.add('show');
         }
-
-        function closeDayView() {
-            dayModal.classList.remove('show');
-        }
+        function closeDayView() { dayModal.classList.remove('show'); }
 
         // ----- 周视图 -----
         function renderWeekView() {
@@ -1304,7 +1085,6 @@
                     openAddModal(formatDate(targetDate));
                 });
             });
-
             updateWeekHighlights();
         }
 
@@ -1315,14 +1095,12 @@
             const startDateStr = formatDate(start);
             const labelStr = `${start.getFullYear()}年${start.getMonth()+1}月${start.getDate()}日 - ${end.getMonth()+1}月${end.getDate()}日`;
             const gridHeight = 680;
-            const startHour = 8,
-                endHour = 22;
-            const extraTop = 30,
-                extraBottom = 30;
+            const startHour = 8, endHour = 22;
+            const extraTop = 30, extraBottom = 30;
             const totalHeightMinutes = (endHour - startHour) * 60 + extraTop + extraBottom;
 
             let headerCells = '';
-            const dayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const dayLabels = ['周一','周二','周三','周四','周五','周六','周日'];
             const dayDates = [];
             for (let i = 0; i < 7; i++) {
                 const d = new Date(start);
@@ -1331,9 +1109,7 @@
                 const ds = formatDate(d);
                 const isToday = ds === todayStr;
                 const labelDay = `${d.getMonth()+1}/${d.getDate()}`;
-                headerCells += `<div class="header-cell${isToday ? ' today' : ''}">
-                                    ${dayLabels[i]}<span class="week-date-sub">${labelDay}</span>
-                                </div>`;
+                headerCells += `<div class="header-cell${isToday ? ' today' : ''}">${dayLabels[i]}<span class="week-date-sub">${labelDay}</span></div>`;
             }
 
             let timeMarkers = '';
@@ -1411,27 +1187,19 @@
         }
 
         let highlightInterval = null;
-
         function updateWeekHighlights() {
-            if (highlightInterval) {
-                clearInterval(highlightInterval);
-                highlightInterval = null;
-            }
+            if (highlightInterval) { clearInterval(highlightInterval); highlightInterval = null; }
             const update = () => {
                 const now = new Date();
                 const hours = now.getHours();
                 const minutes = now.getMinutes();
-                const startHour = 8,
-                    endHour = 22;
-                const extraTop = 30,
-                    extraBottom = 30;
+                const startHour = 8, endHour = 22;
+                const extraTop = 30, extraBottom = 30;
                 const totalHeightMinutes = (endHour - startHour) * 60 + extraTop + extraBottom;
-
                 if (hours >= startHour && hours < endHour) {
                     const hourMinutes = (hours - startHour) * 60 + extraTop;
                     const totalPct = (hourMinutes / totalHeightMinutes) * 100;
                     const minuteOffset = (minutes / totalHeightMinutes) * 100;
-
                     document.querySelectorAll('.current-hour-highlight, .current-time-line').forEach(el => el.remove());
                     document.querySelectorAll('.week-grid .grid-body').forEach(body => {
                         const hourDiv = document.createElement('div');
@@ -1439,7 +1207,6 @@
                         hourDiv.style.top = totalPct + '%';
                         hourDiv.style.height = (60 / totalHeightMinutes * 100) + '%';
                         body.appendChild(hourDiv);
-
                         const lineDiv = document.createElement('div');
                         lineDiv.className = 'current-time-line';
                         lineDiv.style.top = (totalPct + minuteOffset) + '%';
@@ -1453,7 +1220,6 @@
             highlightInterval = setInterval(update, 10000);
         }
 
-        // ---------- 统计 ----------
         function updateStatsAndLabel() {
             const year = state.currentDate.getFullYear();
             const month = state.currentDate.getMonth();
@@ -1474,8 +1240,7 @@
                     const prevYear = month === 0 ? year - 1 : year;
                     const nextMonth = month === 11 ? 0 : month + 1;
                     const nextYear = month === 11 ? year + 1 : year;
-                    elDateLabel.textContent =
-                        `${prevYear}年${prevMonth+1}月 | ${year}年${month+1}月 | ${nextYear}年${nextMonth+1}月`;
+                    elDateLabel.textContent = `${prevYear}年${prevMonth+1}月 | ${year}年${month+1}月 | ${nextYear}年${nextMonth+1}月`;
                 }
                 elStats.textContent = total.toFixed(1);
             } else {
@@ -1490,7 +1255,7 @@
         }
 
         // ============================================================
-        //  10. 课程 CRUD
+        //  10. 课程 CRUD（与之前相同）
         // ============================================================
         function openAddModal(prefillDate) {
             state.editingId = null;
@@ -1511,14 +1276,17 @@
             elSingleArea.style.display = 'block';
             elBatchArea.style.display = 'none';
             elBtnToggleBatch.textContent = '📋 批量模式';
-            fStudentName.oninput = updateRemainField;
+            fStudentName.oninput = function() { updateRemainField(); };
             fTotalHours.oninput = updateRemainField;
             fStartTime.oninput = updateRemainField;
             fEndTime.oninput = updateRemainField;
+            fDate.oninput = updateRemainField;
             courseDropdownList.classList.remove('active');
             studentDropdownList.classList.remove('active');
             elModal.classList.add('show');
-            updateRemainField();
+            if (fStudentName.value.trim()) {
+                updateRemainField();
+            }
         }
 
         function openEditModal(courseId) {
@@ -1542,10 +1310,11 @@
             elBatchArea.style.display = 'none';
             elBtnToggleBatch.textContent = '📋 批量模式';
             elBatchRows.innerHTML = '';
-            fStudentName.oninput = updateRemainField;
+            fStudentName.oninput = function() { updateRemainField(); };
             fTotalHours.oninput = updateRemainField;
             fStartTime.oninput = updateRemainField;
             fEndTime.oninput = updateRemainField;
+            fDate.oninput = updateRemainField;
             courseDropdownList.classList.remove('active');
             studentDropdownList.classList.remove('active');
             elModal.classList.add('show');
@@ -1554,25 +1323,26 @@
 
         function updateRemainField() {
             const name = fStudentName.value.trim();
+            if (name && students[name] && students[name].totalHours > 0) {
+                const currentVal = parseFloat(fTotalHours.value) || 0;
+                if (currentVal === 0) {
+                    fTotalHours.value = students[name].totalHours;
+                }
+            }
             const total = parseFloat(fTotalHours.value) || 0;
             if (!name || total === 0) {
                 fRemainDisplay.textContent = '--';
                 return;
             }
+            const date = fDate.value;
             const start = fStartTime.value;
             const end = fEndTime.value;
-            let currentCourseHours = 0;
-            if (start && end) {
-                const [sh, sm] = start.split(':').map(Number);
-                const [eh, em] = end.split(':').map(Number);
-                if (!isNaN(sh) && !isNaN(sm) && !isNaN(eh) && !isNaN(em) && (eh > sh || (eh === sh && em > sm))) {
-                    currentCourseHours = (toMinutes(eh, em) - toMinutes(sh, sm)) / 60;
-                }
+            if (!date || !start || !end) {
+                fRemainDisplay.textContent = '请填写完整时间';
+                return;
             }
-            const excludeId = state.editingId !== null ? state.editingId : null;
-            const used = getStudentUsedHours(name, excludeId);
-            const remain = Math.max(0, total - used - currentCourseHours);
-            fRemainDisplay.textContent = remain.toFixed(1) + ' 小时';
+            const remain = calculateRemainAfterCourse(name, date, start, end, state.editingId);
+            fRemainDisplay.textContent = remain !== null ? remain.toFixed(1) + ' 小时' : '--';
         }
 
         function toggleBatchMode() {
@@ -1604,6 +1374,26 @@
             elBatchRows.appendChild(row);
         }
 
+        // ============================================================
+        //  11. 详情页刷新
+        // ============================================================
+        function refreshDetailIfOpen() {
+            if (!elDetail.classList.contains('show') || state.selectedCourseId === null) return;
+            const c = courses.find(x => x.id === state.selectedCourseId);
+            if (!c) { closeDetail(); return; }
+            dCourseName.textContent = c.courseName;
+            dStudentName.textContent = c.studentName;
+            dClassroom.textContent = c.classroom || '未设置';
+            const d = parseDate(c.date);
+            dDate.textContent = formatDateDisplay(d);
+            dTime.textContent = `${c.startTime} - ${c.endTime}`;
+            const remain = calculateRemainAfterCourse(c.studentName, c.date, c.startTime, c.endTime, null);
+            dRemain.textContent = remain !== null ? remain.toFixed(1) + ' 小时' : '未设置总课时';
+        }
+
+        // ============================================================
+        //  12. 保存课程
+        // ============================================================
         async function saveCourse(e) {
             e.preventDefault();
             const courseName = fCourseName.value.trim();
@@ -1686,6 +1476,7 @@
             fTotalHours.oninput = null;
             fStartTime.oninput = null;
             fEndTime.oninput = null;
+            fDate.oninput = null;
             elBatchRows.innerHTML = '';
             elSingleArea.style.display = 'block';
             elBatchArea.style.display = 'none';
@@ -1695,7 +1486,7 @@
         }
 
         // ============================================================
-        //  11. 详情
+        //  13. 详情
         // ============================================================
         function openDetailModal(courseId) {
             const c = courses.find(x => x.id === courseId);
@@ -1707,16 +1498,11 @@
             const d = parseDate(c.date);
             dDate.textContent = formatDateDisplay(d);
             dTime.textContent = `${c.startTime} - ${c.endTime}`;
-            const remain = getStudentRemainHours(c.studentName, null);
+            const remain = calculateRemainAfterCourse(c.studentName, c.date, c.startTime, c.endTime, null);
             dRemain.textContent = remain !== null ? remain.toFixed(1) + ' 小时' : '未设置总课时';
             elDetail.classList.add('show');
         }
-
-        function closeDetail() {
-            elDetail.classList.remove('show');
-            state.selectedCourseId = null;
-        }
-
+        function closeDetail() { elDetail.classList.remove('show'); state.selectedCourseId = null; }
         function deleteSelectedCourse() {
             if (state.selectedCourseId === null) return;
             if (!confirm('确定删除该课程吗？')) return;
@@ -1725,7 +1511,6 @@
             closeDetail();
             render();
         }
-
         function editSelectedCourse() {
             if (state.selectedCourseId === null) return;
             const id = state.selectedCourseId;
@@ -1734,7 +1519,7 @@
         }
 
         // ============================================================
-        //  12. 视图切换 & 缩放
+        //  14. 视图切换 & 缩放
         // ============================================================
         function setView(mode) {
             state.viewMode = mode;
@@ -1745,7 +1530,6 @@
             state.scaleFactor = 1.0;
             render();
         }
-
         function setSubMode(mode) {
             state.subMode = mode;
             elSubToggle.querySelectorAll('button').forEach(b => {
@@ -1754,77 +1538,34 @@
             state.scaleFactor = 1.0;
             render();
         }
-
-        function navigateWeek(delta) {
-            const d = new Date(state.currentDate);
-            d.setDate(d.getDate() + delta * 7);
-            state.currentDate = d;
-            render();
-        }
-
-        function goToToday() {
-            state.currentDate = new Date();
-            render();
-        }
-
-        function zoomInAction() {
-            if (state.viewMode === 'month' && state.subMode === 'single') {
-                state.scaleFactor = Math.min(2.0, state.scaleFactor + 0.1);
-                zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
-                applyZoom();
-            }
-        }
-
-        function zoomOutAction() {
-            if (state.viewMode === 'month' && state.subMode === 'single') {
-                state.scaleFactor = Math.max(0.5, state.scaleFactor - 0.1);
-                zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%';
-                applyZoom();
-            }
-        }
+        function navigateWeek(delta) { const d = new Date(state.currentDate); d.setDate(d.getDate() + delta * 7); state.currentDate = d; render(); }
+        function goToToday() { state.currentDate = new Date(); render(); }
+        function zoomInAction() { if (state.viewMode === 'month' && state.subMode === 'single') { state.scaleFactor = Math.min(2.0, state.scaleFactor + 0.1); zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%'; applyZoom(); } }
+        function zoomOutAction() { if (state.viewMode === 'month' && state.subMode === 'single') { state.scaleFactor = Math.max(0.5, state.scaleFactor - 0.1); zoomLevel.textContent = Math.round(state.scaleFactor * 100) + '%'; applyZoom(); } }
 
         // ============================================================
-        //  13. 事件绑定
+        //  15. 事件绑定
         // ============================================================
         function initEvents() {
-            elViewToggle.addEventListener('click', (e) => {
-                const btn = e.target.closest('button');
-                if (!btn || !btn.dataset.view) return;
-                setView(btn.dataset.view);
-            });
-            elSubToggle.addEventListener('click', (e) => {
-                const btn = e.target.closest('button');
-                if (!btn || !btn.dataset.sub) return;
-                setSubMode(btn.dataset.sub);
-            });
+            elViewToggle.addEventListener('click', (e) => { const btn = e.target.closest('button'); if (!btn || !btn.dataset.view) return; setView(btn.dataset.view); });
+            elSubToggle.addEventListener('click', (e) => { const btn = e.target.closest('button'); if (!btn || !btn.dataset.sub) return; setSubMode(btn.dataset.sub); });
             elBtnAdd.addEventListener('click', () => openAddModal());
             elBtnBackToday.addEventListener('click', goToToday);
             btnExport.addEventListener('click', exportData);
             btnImport.addEventListener('click', importData);
 
             dayModalClose.addEventListener('click', closeDayView);
-            dayModal.addEventListener('click', (e) => {
-                if (e.target === dayModal) closeDayView();
-            });
-            dayModalAddBtn.addEventListener('click', () => {
-                closeDayView();
-                openAddModal(dayModalDate);
-            });
+            dayModal.addEventListener('click', (e) => { if (e.target === dayModal) closeDayView(); });
+            dayModalAddBtn.addEventListener('click', () => { closeDayView(); openAddModal(dayModalDate); });
 
             elModalCancel.addEventListener('click', closeModal);
-            elModal.addEventListener('click', (e) => {
-                if (e.target === elModal) closeModal();
-            });
+            elModal.addEventListener('click', (e) => { if (e.target === elModal) closeModal(); });
             elForm.addEventListener('submit', saveCourse);
             elBtnToggleBatch.addEventListener('click', toggleBatchMode);
-            elBtnAddBatchRow.addEventListener('click', () => {
-                addBatchRow(fDate.value, fStartTime.value, fEndTime.value);
-            });
+            elBtnAddBatchRow.addEventListener('click', () => { addBatchRow(fDate.value, fStartTime.value, fEndTime.value); });
 
             elDetailClose.addEventListener('click', closeDetail);
-            elDetail.addEventListener('click', (e) => {
-                if (e.target === elDetail) closeDetail();
-            });
+            elDetail.addEventListener('click', (e) => { if (e.target === elDetail) closeDetail(); });
             elDetailEdit.addEventListener('click', editSelectedCourse);
             elDetailDelete.addEventListener('click', deleteSelectedCourse);
 
@@ -1832,13 +1573,9 @@
             zoomOut.addEventListener('click', zoomOutAction);
 
             document.addEventListener('keydown', (e) => {
-                if (elModal.classList.contains('show') || elDetail.classList.contains('show') || dayModal.classList
-                    .contains('show') || authModal.classList.contains('show') || syncModal.classList.contains('show'))
-                    return;
-                if (e.key === 'ArrowLeft') { e.preventDefault();
-                    navigateWeek(-1); }
-                if (e.key === 'ArrowRight') { e.preventDefault();
-                    navigateWeek(1); }
+                if (elModal.classList.contains('show') || elDetail.classList.contains('show') || dayModal.classList.contains('show') || authModal.classList.contains('show') || syncModal.classList.contains('show')) return;
+                if (e.key === 'ArrowLeft') { e.preventDefault(); navigateWeek(-1); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); navigateWeek(1); }
                 if (e.key === 'm' || e.key === 'M') setView('month');
                 if (e.key === 'w' || e.key === 'W') setView('week');
                 if (e.key === 't' || e.key === 'T') goToToday();
@@ -1849,7 +1586,7 @@
         }
 
         // ============================================================
-        //  14. PWA 支持
+        //  16. PWA 支持
         // ============================================================
         function setupPWA() {
             const iconSvg = (size) =>
@@ -1866,10 +1603,8 @@
                 background_color: '#ffffff',
                 theme_color: '#4f7df3',
                 icons: [
-                    { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(192)), sizes: '192x192',
-                        type: 'image/svg+xml' },
-                    { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(512)), sizes: '512x512',
-                        type: 'image/svg+xml' },
+                    { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(192)), sizes: '192x192', type: 'image/svg+xml' },
+                    { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(512)), sizes: '512x512', type: 'image/svg+xml' },
                 ]
             };
             const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
@@ -1903,58 +1638,30 @@
         }
 
         // ============================================================
-        //  15. 初始化
+        //  17. 初始化
         // ============================================================
         async function init() {
-            // 先尝试加载本地数据作为默认
             const hasLocal = loadLocalData();
             if (!hasLocal || courses.length === 0) {
-                // 生成示例数据
                 const today = new Date();
                 const ds = formatDate(today);
-                courses.push({
-                    id: nextId++,
-                    courseName: '示例课程',
-                    studentName: '张三',
-                    classroom: 'A101',
-                    date: ds,
-                    startTime: '09:00',
-                    endTime: '10:00',
-                });
+                courses.push({ id: nextId++, courseName: '示例课程', studentName: '张三', classroom: 'A101', date: ds, startTime: '09:00', endTime: '10:00' });
                 students['张三'] = { totalHours: 20 };
                 const ds2 = formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1));
-                courses.push({
-                    id: nextId++,
-                    courseName: '晚间课程',
-                    studentName: '张三',
-                    classroom: 'B202',
-                    date: ds2,
-                    startTime: '20:00',
-                    endTime: '22:00',
-                });
+                courses.push({ id: nextId++, courseName: '晚间课程', studentName: '张三', classroom: 'B202', date: ds2, startTime: '20:00', endTime: '22:00' });
                 saveLocalData();
             }
-
-            // 设置当前日期
             state.currentDate = new Date();
-            // 初始化模式为本地（默认）
             state.mode = 'local';
             updateModeUI();
-
             render();
             initEvents();
             elSubToggle.style.display = 'flex';
             setupPWA();
-
-            // 清理定时器
             window.addEventListener('beforeunload', () => {
-                if (highlightInterval) {
-                    clearInterval(highlightInterval);
-                    highlightInterval = null;
-                }
+                if (highlightInterval) { clearInterval(highlightInterval); highlightInterval = null; }
             });
         }
-
         init();
     </script>
 </body>
