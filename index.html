@@ -357,6 +357,37 @@
 
         @media (max-width:1024px) { .month-grid-wrap { flex-wrap:wrap; } .month-card { max-width:100%; min-width:220px; } .navbar { padding:10px 16px; } .navbar-title { font-size:17px; } .btn-add-nav { padding:6px 14px; font-size:13px; } .calendar-wrap { padding:12px 12px 16px 12px; } .modal-box { max-width:95%; padding:20px; } .batch-area .batch-row { flex-wrap:wrap; } .batch-area .batch-row input { min-width:60px; flex:1 0 80px; } .zoom-controls { top:12px; right:12px; } }
         @media (max-width:700px) { #app { height:auto; min-height:100vh; border-radius:16px; } .navbar { flex-direction:column; align-items:stretch; gap:6px; } .navbar-left { flex-wrap:wrap; justify-content:center; } .navbar-right { justify-content:center; flex-wrap:wrap; } .navbar-stats { font-size:13px; padding:4px 14px; } .modal-box { padding:16px; } .month-day-cell { min-height:54px; padding:2px 3px; } .month-day-cell .day-number { font-size:12px; } .month-day-cell .course-slot { font-size:7px; padding:0 2px; } .week-grid { min-width:500px; } .week-grid .grid-body { height:480px; } .week-grid .grid-body .day-column .course-block { font-size:9px; padding:1px 4px; } .week-grid .grid-body .day-column .course-block .course-name { font-size:10px; } .zoom-controls { top:8px; right:8px; padding:2px 6px; } .zoom-controls button { font-size:18px; width:26px; height:26px; } .zoom-controls .zoom-level { font-size:12px; min-width:30px; line-height:26px; } .month-grid-wrap.single { margin-top:50px; } }
+        /* ===== 续费课时功能 ===== */
+        .btn-renew-records { background:transparent; border:1px solid #e2e8f0; border-radius:16px; padding:4px 12px; font-size:12px; cursor:pointer; transition:.2s; color:#4f7df3; white-space:nowrap; }
+        .btn-renew-records:hover { background:#eef4fe; }
+        .renew-block { margin-top:12px; padding:12px 14px; background:#fff7ed; border:1px solid #fde2c4; border-radius:12px; }
+        .renew-block > label { margin:0 0 8px 0; color:#b8742a; }
+        .renew-row { display:flex; gap:8px; align-items:center; }
+        .renew-row input { flex:1; background:white; }
+        .renew-row #btnConfirmRenew { flex:0 0 auto; background:#f0883a; color:white; border:none; border-radius:12px; padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; transition:.2s; white-space:nowrap; }
+        .renew-row #btnConfirmRenew:hover { background:#db7327; }
+        .renew-breakdown { margin-top:10px; font-size:13px; color:#7a5230; }
+        .renew-breakdown b { color:#b8742a; }
+        .renew-history { margin-top:8px; max-height:150px; overflow-y:auto; }
+        .renew-history-title { font-size:12px; font-weight:600; color:#a06a2c; margin-bottom:4px; }
+        .renew-item { display:flex; justify-content:space-between; font-size:12px; padding:4px 8px; background:rgba(255,255,255,0.6); border-radius:8px; margin-bottom:4px; }
+        .renew-item .renew-time { color:#8a6a4a; }
+        .renew-item .renew-amt { color:#2c8a4a; font-weight:700; }
+        .renew-empty { font-size:12px; color:#b9a98f; padding:4px 0; }
+        .records-summary { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:10px; margin:8px 0 16px 0; }
+        .records-card { background:#f8fafc; border:1px solid #eef1f5; border-radius:12px; padding:10px 12px; }
+        .records-card .rc-name { font-weight:700; color:#1a2332; font-size:14px; margin-bottom:6px; }
+        .records-card .rc-row { display:flex; justify-content:space-between; font-size:12px; color:#5a6879; padding:2px 0; }
+        .records-card .rc-row b { color:#2c3e50; }
+        .records-list-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#fafbfc; margin-bottom:6px; font-size:13px; }
+        .records-list-item .rl-student { font-weight:600; color:#1a2332; min-width:64px; }
+        .records-list-item .rl-time { color:#8a9aa8; flex:1; }
+        .records-list-item .rl-amt { color:#2c8a4a; font-weight:700; min-width:70px; text-align:right; }
+        .records-list-item .rl-del { background:#fde8e8; border:none; border-radius:8px; padding:4px 10px; color:#d9534f; cursor:pointer; font-size:12px; }
+        .records-list-item .rl-del:hover { background:#fcd0d0; }
+        .records-empty { text-align:center; color:#b0bcc8; padding:30px 0; font-size:15px; }
+        #toast { position:fixed; left:50%; bottom:36px; transform:translateX(-50%) translateY(20px); background:#1a2332; color:white; padding:12px 22px; border-radius:14px; font-size:14px; font-weight:600; box-shadow:0 12px 30px rgba(0,0,0,0.25); opacity:0; pointer-events:none; transition:.3s; z-index:2000; }
+        #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
@@ -385,6 +416,7 @@
                     <button id="btnExport" title="导出数据（JSON）">📤 导出</button>
                     <button id="btnImport" title="导入数据（JSON）">📥 导入</button>
                 </div>
+                <button class="btn-renew-records" id="btnRenewRecords" title="续费课时记录">📜 续费记录</button>
                 <div class="mode-switch" id="modeSwitch">
                     <span class="mode-label" id="modeLabel">📍 本地模式</span>
                     <button id="btnToggleMode">切换至云端</button>
@@ -428,6 +460,15 @@
                     <span class="label">📌 扣除本课后剩余</span>
                     <span class="value" id="fRemainDisplay">--</span>
                 </div>
+                <div class="renew-block" id="renewBlock">
+                    <label>➕ 续费课时（追加到本期总课时）</label>
+                    <div class="renew-row">
+                        <input type="number" id="fRenewHours" step="0.5" min="0" placeholder="本次续费课时（小时）" />
+                        <button type="button" id="btnConfirmRenew">确认续费</button>
+                    </div>
+                    <div class="renew-breakdown" id="fRenewBreakdown"></div>
+                    <div class="renew-history" id="renewHistory"></div>
+                </div>
                 <div id="singleCourseArea">
                     <label>日期 *</label>
                     <input type="date" id="fDate" required />
@@ -462,11 +503,26 @@
         <div class="modal-box">
             <h2 id="dayModalTitle">📅 课程列表</h2>
             <div id="dayCourseList" style="max-height:400px;overflow-y:auto;margin:16px 0;"></div>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="dayModalAddBtn">＋ 添加课程</button>
+            <button class="btn-cancel" id="dayModalClose">关闭</button>
+        </div>
+    </div>
+
+    <!-- ★★★ 续费课时记录模态框 ★★★ -->
+    <div class="modal-overlay" id="recordsModal">
+        <div class="modal-box">
+            <h2>📜 续费课时记录</h2>
+            <div class="sub-hint">追踪每位学生的续费课时：初始课时 ＋ 续费课时 ＝ 本期总课时</div>
+            <div class="records-summary" id="recordsSummary"></div>
+            <div id="recordsList" style="max-height:360px;overflow-y:auto;margin:8px 0;"></div>
             <div class="modal-actions">
-                <button class="btn-secondary" id="dayModalAddBtn">＋ 添加课程</button>
-                <button class="btn-cancel" id="dayModalClose">关闭</button>
+                <button class="btn-cancel" id="recordsClose">关闭</button>
             </div>
         </div>
+    </div>
+
+    <div id="toast"></div>
     </div>
 
     <!-- ★★★ 美化后的登录/注册模态框（增加加载状态元素） ★★★ -->
@@ -597,6 +653,16 @@
         const fEndTime = $('#fEndTime');
         const fTotalHours = $('#fTotalHours');
         const fRemainDisplay = $('#fRemainDisplay');
+        const fRenewHours = $('#fRenewHours');
+        const btnConfirmRenew = $('#btnConfirmRenew');
+        const fRenewBreakdown = $('#fRenewBreakdown');
+        const renewHistory = $('#renewHistory');
+        const btnRenewRecords = $('#btnRenewRecords');
+        const recordsModal = $('#recordsModal');
+        const recordsSummary = $('#recordsSummary');
+        const recordsList = $('#recordsList');
+        const recordsClose = $('#recordsClose');
+        const elToast = $('#toast');
         const elModalCancel = $('#modalCancel');
         const elModalConfirm = $('#modalConfirm');
         const elSingleArea = $('#singleCourseArea');
@@ -699,8 +765,9 @@
         //  4. 数据持久化（与之前相同）
         // ============================================================
         function saveLocalData() { try { const data = { courses, students, nextId }; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { console.warn('保存本地数据失败:', e); } }
-        function loadLocalData() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return false; const data = JSON.parse(raw); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; return true; } catch (e) { console.warn('读取本地数据失败:', e); return false; } }
-        async function loadCloudData() { if (!state.user) return false; try { const doc = await state.userDocRef.get(); if (doc.exists) { const data = doc.data(); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; return true; } else { await state.userDocRef.set({ courses: [], students: {}, nextId: 1 }); courses = []; students = {}; nextId = 1; return true; } } catch (e) { console.warn('读取云端数据失败:', e); return false; } }
+        function normalizeStudents() { for (const name in students) { if (!students[name]) students[name] = { totalHours: 0, renewalLog: [] }; if (!students[name].renewalLog) students[name].renewalLog = []; } }
+        function loadLocalData() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return false; const data = JSON.parse(raw); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; normalizeStudents(); return true; } catch (e) { console.warn('读取本地数据失败:', e); return false; } }
+        async function loadCloudData() { if (!state.user) return false; try { const doc = await state.userDocRef.get(); if (doc.exists) { const data = doc.data(); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; normalizeStudents(); return true; } else { await state.userDocRef.set({ courses: [], students: {}, nextId: 1 }); courses = []; students = {}; nextId = 1; normalizeStudents(); return true; } } catch (e) { console.warn('读取云端数据失败:', e); return false; } }
         async function saveCloudData() { if (!state.user) return; try { await state.userDocRef.set({ courses: courses, students: students, nextId: nextId, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch (e) { console.warn('保存云端数据失败:', e); } }
         async function saveData() { if (state.mode === 'local') { saveLocalData(); } else { await saveCloudData(); } }
         async function loadData() { if (state.mode === 'local') { return loadLocalData(); } else { return await loadCloudData(); } }
@@ -1269,14 +1336,16 @@
             fEndTime.value = '09:00';
             fTotalHours.value = '';
             fClassroom.value = '';
+            fRenewHours.value = '';
             fRemainDisplay.textContent = '--';
+            refreshRenewInfo();
             elModalConfirm.textContent = '添加';
             elModalConfirm.className = 'btn-confirm';
             elBatchRows.innerHTML = '';
             elSingleArea.style.display = 'block';
             elBatchArea.style.display = 'none';
             elBtnToggleBatch.textContent = '📋 批量模式';
-            fStudentName.oninput = function() { updateRemainField(); };
+            fStudentName.oninput = function() { updateRemainField(); refreshRenewInfo(); };
             fTotalHours.oninput = updateRemainField;
             fStartTime.oninput = updateRemainField;
             fEndTime.oninput = updateRemainField;
@@ -1310,7 +1379,7 @@
             elBatchArea.style.display = 'none';
             elBtnToggleBatch.textContent = '📋 批量模式';
             elBatchRows.innerHTML = '';
-            fStudentName.oninput = function() { updateRemainField(); };
+            fStudentName.oninput = function() { updateRemainField(); refreshRenewInfo(); };
             fTotalHours.oninput = updateRemainField;
             fStartTime.oninput = updateRemainField;
             fEndTime.oninput = updateRemainField;
@@ -1319,6 +1388,7 @@
             studentDropdownList.classList.remove('active');
             elModal.classList.add('show');
             updateRemainField();
+            refreshRenewInfo();
         }
 
         function updateRemainField() {
@@ -1343,6 +1413,7 @@
             }
             const remain = calculateRemainAfterCourse(name, date, start, end, state.editingId);
             fRemainDisplay.textContent = remain !== null ? remain.toFixed(1) + ' 小时' : '--';
+            refreshRenewInfo();
         }
 
         function toggleBatchMode() {
@@ -1373,6 +1444,144 @@
             });
             elBatchRows.appendChild(row);
         }
+
+        // ============================================================
+        //  10.5 续费课时功能
+        // ============================================================
+        function formatDateTime(iso) {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return iso;
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function showToast(msg) {
+            elToast.textContent = msg;
+            elToast.classList.add('show');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => elToast.classList.remove('show'), 2600);
+        }
+
+        function ensureStudent(name) {
+            if (!students[name]) students[name] = { totalHours: 0, renewalLog: [] };
+            if (!students[name].renewalLog) students[name].renewalLog = [];
+            return students[name];
+        }
+
+        function getRenewedSum(student) {
+            const log = student && student.renewalLog ? student.renewalLog : [];
+            return log.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+        }
+
+        // 刷新添加/编辑弹窗中的「初始+续费」分解与续费历史
+        function refreshRenewInfo() {
+            const name = fStudentName.value.trim();
+            const student = name ? students[name] : null;
+            if (student && (student.totalHours > 0 || getRenewedSum(student) > 0)) {
+                const renewSum = getRenewedSum(student);
+                const initial = Math.max(0, (student.totalHours || 0) - renewSum);
+                fRenewBreakdown.innerHTML = `📊 本期共 <b>${(student.totalHours||0).toFixed(1)}</b> 小时 ＝ 初始 <b>${initial.toFixed(1)}</b> ＋ 续费 <b>${renewSum.toFixed(1)}</b>`;
+                renderRenewHistory(name);
+            } else {
+                fRenewBreakdown.innerHTML = '';
+                renewHistory.innerHTML = '';
+            }
+        }
+
+        function renderRenewHistory(studentName) {
+            const log = (students[studentName] && students[studentName].renewalLog) || [];
+            if (!log.length) { renewHistory.innerHTML = '<div class="renew-empty">暂无续费记录</div>'; return; }
+            let html = '<div class="renew-history-title">📜 续费记录</div>';
+            for (let i = log.length - 1; i >= 0; i--) {
+                const r = log[i];
+                html += `<div class="renew-item"><span class="renew-time">${formatDateTime(r.time)}</span><span class="renew-amt">+${parseFloat(r.amount).toFixed(1)} 小时</span></div>`;
+            }
+            renewHistory.innerHTML = html;
+        }
+
+        async function confirmRenew() {
+            const name = fStudentName.value.trim();
+            if (!name) { alert('请先填写学生姓名'); return; }
+            const amt = parseFloat(fRenewHours.value);
+            if (!amt || amt <= 0) { alert('请输入大于 0 的续费课时'); return; }
+            const student = ensureStudent(name);
+            student.totalHours = (student.totalHours || 0) + amt;
+            student.renewalLog.push({ time: new Date().toISOString(), amount: amt });
+            fTotalHours.value = student.totalHours;
+            fRenewHours.value = '';
+            updateRemainField();
+            refreshRenewInfo();
+            await saveData();
+            showToast(`已为「${name}」续费 ${amt.toFixed(1)} 小时，本期共 ${(student.totalHours).toFixed(1)} 小时`);
+        }
+
+        function openRecordsModal() {
+            const names = Object.keys(students).filter(n => students[n] && (students[n].totalHours > 0 || getRenewedSum(students[n]) > 0));
+            if (!names.length) {
+                recordsSummary.innerHTML = '';
+                recordsList.innerHTML = '<div class="records-empty">还没有任何学生或续费记录</div>';
+                recordsModal.classList.add('show');
+                return;
+            }
+            // 概览卡片
+            let summaryHtml = '';
+            for (const name of names) {
+                const st = students[name];
+                const renewSum = getRenewedSum(st);
+                const initial = Math.max(0, (st.totalHours || 0) - renewSum);
+                const used = getStudentUsedHours(name);
+                const remain = Math.max(0, (st.totalHours || 0) - used);
+                summaryHtml += `<div class="records-card">
+                    <div class="rc-name">${name}</div>
+                    <div class="rc-row"><span>本期总课时</span><b>${(st.totalHours||0).toFixed(1)} h</b></div>
+                    <div class="rc-row"><span>初始课时</span><b>${initial.toFixed(1)} h</b></div>
+                    <div class="rc-row"><span>续费课时</span><b style="color:#2c8a4a">${renewSum.toFixed(1)} h</b></div>
+                    <div class="rc-row"><span>已用 / 剩余</span><b>${used.toFixed(1)} / ${remain.toFixed(1)} h</b></div>
+                </div>`;
+            }
+            recordsSummary.innerHTML = summaryHtml;
+
+            // 续费流水（按时间倒序，跨学生）
+            const all = [];
+            for (const name of names) {
+                const log = students[name].renewalLog || [];
+                for (let i = 0; i < log.length; i++) {
+                    all.push({ student: name, time: log[i].time, amount: log[i].amount, idx: i });
+                }
+            }
+            all.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+            if (!all.length) {
+                recordsList.innerHTML = '<div class="records-empty">暂无续费记录</div>';
+            } else {
+                let html = '';
+                for (const r of all) {
+                    html += `<div class="records-list-item">
+                        <span class="rl-student">${r.student}</span>
+                        <span class="rl-time">${formatDateTime(r.time)}</span>
+                        <span class="rl-amt">+${parseFloat(r.amount).toFixed(1)} 小时</span>
+                        <button class="rl-del" data-student="${r.student}" data-idx="${r.idx}">删除</button>
+                    </div>`;
+                }
+                recordsList.innerHTML = html;
+                recordsList.querySelectorAll('.rl-del').forEach(btn => {
+                    btn.addEventListener('click', () => deleteRenewRecord(btn.dataset.student, parseInt(btn.dataset.idx)));
+                });
+            }
+            recordsModal.classList.add('show');
+        }
+
+        async function deleteRenewRecord(student, idx) {
+            const st = students[student];
+            if (!st || !st.renewalLog || !st.renewalLog[idx]) return;
+            const amt = parseFloat(st.renewalLog[idx].amount) || 0;
+            if (!confirm(`确定删除「${student}」的这条续费记录吗？\n删除后将从本期总课时中扣除 ${amt.toFixed(1)} 小时。`)) return;
+            st.totalHours = Math.max(0, (st.totalHours || 0) - amt);
+            st.renewalLog.splice(idx, 1);
+            await saveData();
+            openRecordsModal();
+            if (fStudentName.value.trim() === student) refreshRenewInfo();
+        }
+
+        function closeRecordsModal() { recordsModal.classList.remove('show'); }
 
         // ============================================================
         //  11. 详情页刷新
@@ -1564,6 +1773,11 @@
             elBtnToggleBatch.addEventListener('click', toggleBatchMode);
             elBtnAddBatchRow.addEventListener('click', () => { addBatchRow(fDate.value, fStartTime.value, fEndTime.value); });
 
+            btnConfirmRenew.addEventListener('click', confirmRenew);
+            btnRenewRecords.addEventListener('click', openRecordsModal);
+            recordsClose.addEventListener('click', closeRecordsModal);
+            recordsModal.addEventListener('click', (e) => { if (e.target === recordsModal) closeRecordsModal(); });
+
             elDetailClose.addEventListener('click', closeDetail);
             elDetail.addEventListener('click', (e) => { if (e.target === elDetail) closeDetail(); });
             elDetailEdit.addEventListener('click', editSelectedCourse);
@@ -1646,7 +1860,7 @@
                 const today = new Date();
                 const ds = formatDate(today);
                 courses.push({ id: nextId++, courseName: '示例课程', studentName: '张三', classroom: 'A101', date: ds, startTime: '09:00', endTime: '10:00' });
-                students['张三'] = { totalHours: 20 };
+                students['张三'] = { totalHours: 20, renewalLog: [] };
                 const ds2 = formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1));
                 courses.push({ id: nextId++, courseName: '晚间课程', studentName: '张三', classroom: 'B202', date: ds2, startTime: '20:00', endTime: '22:00' });
                 saveLocalData();
