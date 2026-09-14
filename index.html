@@ -508,6 +508,7 @@
             <button class="btn-cancel" id="dayModalClose">关闭</button>
         </div>
     </div>
+    </div>
 
     <!-- ★★★ 续费课时记录模态框 ★★★ -->
     <div class="modal-overlay" id="recordsModal">
@@ -523,7 +524,6 @@
     </div>
 
     <div id="toast"></div>
-    </div>
 
     <!-- ★★★ 美化后的登录/注册模态框（增加加载状态元素） ★★★ -->
     <div class="modal-overlay" id="authModal">
@@ -765,7 +765,14 @@
         //  4. 数据持久化（与之前相同）
         // ============================================================
         function saveLocalData() { try { const data = { courses, students, nextId }; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { console.warn('保存本地数据失败:', e); } }
-        function normalizeStudents() { for (const name in students) { if (!students[name]) students[name] = { totalHours: 0, renewalLog: [] }; if (!students[name].renewalLog) students[name].renewalLog = []; } }
+        function normalizeStudents() {
+            if (!students || typeof students !== 'object' || Array.isArray(students)) { students = {}; return; }
+            for (const name in students) {
+                if (!students[name] || typeof students[name] !== 'object') { students[name] = { totalHours: 0, renewalLog: [] }; continue; }
+                students[name].totalHours = parseFloat(students[name].totalHours) || 0;
+                if (!Array.isArray(students[name].renewalLog)) students[name].renewalLog = [];
+            }
+        }
         function loadLocalData() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return false; const data = JSON.parse(raw); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; normalizeStudents(); return true; } catch (e) { console.warn('读取本地数据失败:', e); return false; } }
         async function loadCloudData() { if (!state.user) return false; try { const doc = await state.userDocRef.get(); if (doc.exists) { const data = doc.data(); courses = data.courses || []; students = data.students || {}; nextId = data.nextId || 1; normalizeStudents(); return true; } else { await state.userDocRef.set({ courses: [], students: {}, nextId: 1 }); courses = []; students = {}; nextId = 1; normalizeStudents(); return true; } } catch (e) { console.warn('读取云端数据失败:', e); return false; } }
         async function saveCloudData() { if (!state.user) return; try { await state.userDocRef.set({ courses: courses, students: students, nextId: nextId, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch (e) { console.warn('保存云端数据失败:', e); } }
@@ -1515,6 +1522,7 @@
         }
 
         function openRecordsModal() {
+            try {
             const names = Object.keys(students).filter(n => students[n] && (students[n].totalHours > 0 || getRenewedSum(students[n]) > 0));
             if (!names.length) {
                 recordsSummary.innerHTML = '';
@@ -1567,6 +1575,10 @@
                 });
             }
             recordsModal.classList.add('show');
+            } catch (err) {
+                console.error('打开续费记录失败:', err);
+                alert('打开续费记录失败：' + (err && err.message ? err.message : err));
+            }
         }
 
         async function deleteRenewRecord(student, idx) {
